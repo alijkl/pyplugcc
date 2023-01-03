@@ -10,7 +10,7 @@ PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
 plugin-python$(PYTHON_VERSION).so: $(PLUGIN_SOURCE_FILES)
 	$(HOST_GCC) -shared $(PYTHON_INCLUDE) $(CXXFLAGS) $^ -o $@
 
-clean:
+clean::
 	$(RM) plugin-python$(PYTHON_VERSION).so
-	$(RM) *.o
+	$(RM) *.o *~
 
