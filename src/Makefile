@@ -6,9 +6,25 @@ PYTHON ?= python3
 PYTHON_VERSION= $(shell $(PYTHON) -c \
   "import sys; print('.'.join(sys.version.partition(' ')[0].rsplit('.')[0:-1]))")
 PYTHON_CONFIG ?= python$(PYTHON_VERSION)-config
-PLUGIN_SOURCE_FILES= $(SRC_DIR)gcc-plugin-python.cc
+
+PLUGIN_SOURCE_FILES= \
+                     $(SRC_DIR)gcc-plugin-python.cc \
+                     $(SRC_DIR)gcc-python.cc \
+                     $(SRC_DIR)logging.cc
+
 GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
-CXXFLAGS+=  -fPIC -fno-rtti -O2 -Wall -Werror
+GCC_MAJOR := $(shell \
+               $(HOST_GCC) --version | head -n1 | cut -d' ' -f3 | cut -d'.' -f1)
+ifeq ($(shell test $(GCC_MAJOR) -gt 9; echo $$?),0)
+  GCC_STD ?= -std=c++20
+endif
+ifneq ($(filter $(GCC_MAJOR),8 9),)
+  GCC_STD ?= -std=c++2a
+endif
+GCC_OPT ?=
+GCC_OPT_FLAGS+=$(GCC_STD) $(GCC_OPT)
+CXXFLAGS+= -fPIC -fno-rtti -O2 -Wall $(GCC_OPT_FLAGS)
+
 CXXFLAGS+= -I$(GCCPLUGINS_DIR)/include
 PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
 LD_FLAGS+= $(shell $(PYTHON_CONFIG) --ldflags)
