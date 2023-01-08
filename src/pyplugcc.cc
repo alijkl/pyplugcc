@@ -2,7 +2,7 @@
 #include <Python.h>
 #include <stdexcept>
 #include "gcc-python.h"
-#include "gcc-plugin-python.h"
+#include "pyplugcc.h"
 #include <plugin-version.h>
 #include "logging.h"
 

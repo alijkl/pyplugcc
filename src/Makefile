@@ -8,7 +8,7 @@ PYTHON_VERSION= $(shell $(PYTHON) -c \
 PYTHON_CONFIG ?= python$(PYTHON_VERSION)-config
 
 PLUGIN_SOURCE_FILES= \
-                     $(SRC_DIR)gcc-plugin-python.cc \
+                     $(SRC_DIR)pyplugcc.cc \
                      $(SRC_DIR)gcc-python.cc \
                      $(SRC_DIR)logging.cc
 
@@ -30,10 +30,12 @@ PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
 LD_FLAGS+= $(shell $(PYTHON_CONFIG) --ldflags)
 LD_FLAGS+= -lpython$(PYTHON_VERSION)
 
-$(SRC_DIR)pyplug$(PYTHON_VERSION).so: $(PLUGIN_SOURCE_FILES)
+PLUGIN_LIB_PATH=$(SRC_DIR)pyplugcc$(PYTHON_VERSION).so
+PLUGIN_NAME=$(shell basename $(PLUGIN_LIB_PATH) .so)
+$(PLUGIN_LIB_PATH): $(PLUGIN_SOURCE_FILES)
 	$(HOST_GCC) -shared $(CXXFLAGS) $(PYTHON_INCLUDE) $(LD_FLAGS) $^ -o $@
 
 clean::
-	$(RM) $(SRC_DIR)pyplug$(PYTHON_VERSION).so
+	$(RM) $(SRC_DIR)pyplugcc$(PYTHON_VERSION).so
 	$(RM) $(SRC_DIR)*.o $(SRC_DIR)*~
 
