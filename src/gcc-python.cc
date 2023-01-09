@@ -2,23 +2,24 @@
 #include <Python.h>
 #include <string>
 #include <gcc-plugin.h>
+#include <vector>
+
 #include "logging.h"
-#include "tree.h"
+//#include "tree.h"
 
 static const char* py_repr(PyObject *obj) {
   PyObject* repr = PyObject_Repr(obj);
   PyObject* str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
   char const *bytes = PyBytes_AS_STRING(str);
   Py_XDECREF(repr);
-  // Py_XDECREF(str);
-  // printf ("byte: %s\n", bytes);
+  Py_XDECREF(str);
   return bytes;
 }
 
 struct py_callback_struct
 {
-  PyObject *callback_func;
-  PyObject *kwargs;
+  PyObject *callback_func = NULL;
+  PyObject *kwargs = NULL;
 };
 
 static void py_gcc_call (void *gcc_data, void *user_data) {
@@ -26,13 +27,25 @@ static void py_gcc_call (void *gcc_data, void *user_data) {
   // tree t = (tree) gcc_data;
   struct py_callback_struct *cb = (struct py_callback_struct *)user_data;
   PyObject *args = NULL;
+  PyObject *result;
 
-  pgs = PyGILState_Ensure();
-  PyObject_CallFunctionObjArgs(cb->callback_func, args, cb->kwargs);
-  PyGILState_Release(pgs);
-  pgs = PyGILState_Ensure();
+  if (PyCallable_Check(cb->callback_func)) {
+    pgs = PyGILState_Ensure();
+    result = PyObject_CallFunctionObjArgs(cb->callback_func, args, cb->kwargs);
+    PyGILState_Release(pgs);
+    if (! result) return;
+  }else{
+    LOG("warning skip non callable");
+  }
+  //  PyMem_Free (cb);
+}
 
-  // PyMem_Free (user_data);
+bool
+is_event_without_callback (int event) {
+  std::vector<int> nocallback{
+    PLUGIN_PASS_MANAGER_SETUP, PLUGIN_INFO, PLUGIN_REGISTER_GGC_ROOTS
+  };
+  return  std::binary_search(nocallback.begin(), nocallback.end(), event);
 }
 
 static PyObject *
@@ -51,27 +64,29 @@ py_register_callback(PyObject *self, PyObject *args)
        )
       ) return NULL;
 
-  if (!PyCallable_Check(callback_func)) {
-    PyErr_SetString(PyExc_TypeError, "parameter must be callable");
-    return NULL;
-  }
+  if (! is_event_without_callback(event)) {
+    if (!PyCallable_Check(callback_func)) {
+      PyErr_SetString(PyExc_TypeError, "parameter 3 must be callable");
+      return NULL;
+    }
 
-  py_callback_struct *cb = PyMem_New(py_callback_struct, 1);
-  if (! cb) {
-    sprintf (buffer, "%s PyMem_New(py_callback_struct, 1)\n", err_str.c_str());
+    py_callback_struct *cb = PyMem_New(py_callback_struct, 1);
+    if (! cb) {
+      sprintf (buffer, "%s PyMem_New(py_callback_struct, 1)\n", err_str.c_str());
+      LOG(buffer);
+      return NULL;
+    }
+
+    cb->callback_func = callback_func;
+    Py_INCREF(callback_func);
+
+    register_callback(plugin_name, event, &py_gcc_call, cb);
+    sprintf (buffer, "register_callback(%s, %i, %s, %p)\n",
+	     plugin_name, event, py_repr(cb->callback_func), cb);
     LOG(buffer);
-    return NULL;
+  }else{
+    // FIXME register_callback(plugin_name, event, NULL, specific_user_data);
   }
-
-  cb->callback_func = callback_func;
-  // cb->args = args;
-  Py_INCREF(callback_func);
-
-  register_callback(plugin_name, event, &py_gcc_call, cb);
-  sprintf (buffer, "register_callback(%s, %i, %s, %p)\n",
-	   plugin_name, event, py_repr(cb->callback_func), cb);
-  LOG(buffer);
-
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -128,7 +143,7 @@ init_gcc_module (const char * plugin_name)
     LOG(buffer);
     return res == EXIT_SUCCESS;
   }
-#define DEFEVENT(NAME)				\
+#define DEFEVENT(NAME) \
   res = PyModule_AddIntMacro(gcc_module, NAME);
   if (res != EXIT_SUCCESS) {
     sprintf (buffer, "%s PyModule_AddIntMacro(gcc_module, NAME)\n",
@@ -136,8 +151,8 @@ init_gcc_module (const char * plugin_name)
     LOG(buffer);
     return res == EXIT_SUCCESS;
   }
-# include "plugin.def"
-# undef DEFEVENT
+#include "plugin.def"
+#undef DEFEVENT
 
   return res == EXIT_SUCCESS;
 
