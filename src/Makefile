@@ -30,12 +30,12 @@ PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
 LD_FLAGS+= $(shell $(PYTHON_CONFIG) --ldflags)
 LD_FLAGS+= -lpython$(PYTHON_VERSION)
 
-PLUGIN_LIB_PATH=$(SRC_DIR)pyplugcc$(PYTHON_VERSION).so
+PLUGIN_LIB_PATH=$(SRC_DIR)py$(PYTHON_VERSION)_plugcc$(GCC_MAJOR).so
 PLUGIN_NAME=$(shell basename $(PLUGIN_LIB_PATH) .so)
 $(PLUGIN_LIB_PATH): $(PLUGIN_SOURCE_FILES)
 	$(HOST_GCC) -shared $(CXXFLAGS) $(PYTHON_INCLUDE) $(LD_FLAGS) $^ -o $@
 
 clean::
-	$(RM) $(SRC_DIR)pyplugcc$(PYTHON_VERSION).so
+	$(RM) $(PLUGIN_LIB_PATH)
 	$(RM) $(SRC_DIR)*.o $(SRC_DIR)*~
 
