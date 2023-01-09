@@ -106,9 +106,9 @@ static PyMethodDef Gcc_Methods[] = {
 static struct PyModuleDef gcc_module = {
   .m_base = PyModuleDef_HEAD_INIT,
   .m_name = "gcc",   /* name of module */
-  .m_doc = gcc_doc, /* module documentation, may be NULL */
-  .m_size = -1,     /* size of per-interpreter state of the module,
-		       or -1 if the module keeps state in global variables. */
+  .m_doc = gcc_doc,  /* module documentation, may be NULL */
+  .m_size = -1,      /* size of per-interpreter state of the module,
+		        or -1 if the module keeps state in global variables. */
   .m_methods =  Gcc_Methods,
   .m_slots = NULL,
   .m_traverse = NULL,
@@ -136,24 +136,42 @@ init_gcc_module (const char * plugin_name)
     LOG (buffer);
     return false;
   }
+
   res = PyModule_AddStringMacro(gcc_module, plugin_name);
-  if (res != EXIT_SUCCESS) {
+  if (res < 0) {
     sprintf (buffer, "%s PyModule_AddStringMacro(gcc_module, plugin_name)\n",
 	     err_str.c_str());
     LOG(buffer);
-    return res == EXIT_SUCCESS;
+    Py_DECREF(gcc_module);
+    return false;
   }
+
+  PyObject *event = PyModule_New("gcc.event");
+  PyObject *moduleDict = PyImport_GetModuleDict();
+  PyDict_SetItemString(moduleDict, "gcc.event", event);
+
 #define DEFEVENT(NAME) \
-  res = PyModule_AddIntMacro(gcc_module, NAME);
-  if (res != EXIT_SUCCESS) {
-    sprintf (buffer, "%s PyModule_AddIntMacro(gcc_module, NAME)\n",
+  res = PyModule_AddIntMacro(event, NAME);
+  if (res < 0) {
+    sprintf (buffer, "%s PyModule_AddIntMacro(event, NAME)\n",
 	     err_str.c_str());
     LOG(buffer);
-    return res == EXIT_SUCCESS;
+    Py_DECREF(gcc_module);
+    Py_DECREF(event);
+    return false;
   }
 #include "plugin.def"
 #undef DEFEVENT
 
-  return res == EXIT_SUCCESS;
-
+  Py_INCREF(event);
+  res = PyModule_AddObject(gcc_module, "event", event);
+  if (res < 0) {
+    sprintf (buffer, "%s %i PyModule_AddObject(gcc_module, 'event', event)\n",
+	     err_str.c_str(), res);
+    LOG(buffer);
+    Py_DECREF(gcc_module);
+    Py_DECREF(event);
+    return false;
+  }
+  return true;
 }
