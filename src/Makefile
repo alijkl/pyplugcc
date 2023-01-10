@@ -7,10 +7,10 @@ PYTHON_VERSION= $(shell $(PYTHON) -c \
   "import sys; print('.'.join(sys.version.partition(' ')[0].rsplit('.')[0:-1]))")
 PYTHON_CONFIG ?= python$(PYTHON_VERSION)-config
 
-PLUGIN_SOURCE_FILES= \
-                     $(SRC_DIR)pyplugcc.cc \
-                     $(SRC_DIR)gcc-python.cc \
-                     $(SRC_DIR)logging.cc
+PLUGIN_SOURCE_FILES := \
+                       $(SRC_DIR)pyplugcc.cc \
+                       $(SRC_DIR)pyplugcc-mgcc.cc \
+                       $(SRC_DIR)logging.cc
 
 GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
 GCC_MAJOR := $(shell \
@@ -32,6 +32,7 @@ LD_FLAGS+= -lpython$(PYTHON_VERSION)
 
 PLUGIN_LIB_PATH=$(SRC_DIR)py$(PYTHON_VERSION)_plugcc$(GCC_MAJOR).so
 PLUGIN_NAME=$(shell basename $(PLUGIN_LIB_PATH) .so)
+
 $(PLUGIN_LIB_PATH): $(PLUGIN_SOURCE_FILES)
 	$(HOST_GCC) -shared $(CXXFLAGS) $(PYTHON_INCLUDE) $(LD_FLAGS) $^ -o $@
 

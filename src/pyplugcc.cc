@@ -1,10 +1,10 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdexcept>
-#include "gcc-python.h"
 #include "pyplugcc.h"
-#include <plugin-version.h>
 #include "logging.h"
+#include <plugin-version.h>
+#include "pyplugcc-mgcc.h"
 
 #if PY_VERSION_HEX < 0x03090000
 #error this GCC plugin is for Python >=3.9
