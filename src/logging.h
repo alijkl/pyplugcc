@@ -1,5 +1,6 @@
 
 //enum class LogLevel {Error, Trace};
+#include <string>
 
 #if (__cplusplus >= 202002L)
 #include <string_view>
