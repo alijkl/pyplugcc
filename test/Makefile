@@ -18,7 +18,15 @@ a01_register_callback:$(PLUGIN_LIB_PATH) $(TEST_DIR)gccpy.sh
 	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/$@.py \
           -c $(TEST_DIR)c++/a01_hello.cc -o /dev/null
 
-test:a01_hello a01_register_callback
+a01_gcc_tree:$(PLUGIN_LIB_PATH) $(TEST_DIR)gccpy.sh
+	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/$@.py \
+          -c $(TEST_DIR)c/a01_hello.c -o /dev/null
+
+a01_gcc_tree_code:$(PLUGIN_LIB_PATH) $(TEST_DIR)gccpy.sh
+	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/$@.py \
+          -c $(TEST_DIR)c/a01_hello.c -o /dev/null
+
+test:a01_hello a01_register_callback a01_gcc_tree a01_gcc_tree_code
 
 clean::
 	$(RM) $(TEST_DIR)gccpy.sh
