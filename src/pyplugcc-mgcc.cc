@@ -5,7 +5,9 @@
 #include <vector>
 
 #include "logging.h"
-//#include "tree.h"
+#include "pyplugcc-mgcc-tree.h"
+#include "pyplugcc-mgcc-tree-code.h"
+#include "tree.h"
 
 static const char* py_repr(PyObject *obj) {
   PyObject* repr = PyObject_Repr(obj);
@@ -23,19 +25,25 @@ struct py_callback_struct
 };
 
 static void py_gcc_call (void *gcc_data, void *user_data) {
+  char buffer[200];
   PyGILState_STATE pgs;
-  // tree t = (tree) gcc_data;
   struct py_callback_struct *cb = (struct py_callback_struct *)user_data;
   PyObject *args = NULL;
   PyObject *result;
+  PyObject *pytree = PyGccTree_New();
+  // printf ("pytree i: %p\n", gcc_data);
+  Set_gccdata (pytree, gcc_data);
+  // printf ("pytree o: %p\n", Get_gccdata (pytree));
+  args = Py_BuildValue("O",pytree);
 
   if (PyCallable_Check(cb->callback_func)) {
     pgs = PyGILState_Ensure();
-    result = PyObject_CallFunctionObjArgs(cb->callback_func, args, cb->kwargs);
+    result = PyObject_CallFunctionObjArgs(cb->callback_func, args, NULL);
     PyGILState_Release(pgs);
     if (! result) return;
   }else{
-    LOG("warning skip non callable");
+    sprintf(buffer, "warning skip %s non callable", py_repr(cb->callback_func));
+    LOG(buffer);
   }
   //  PyMem_Free (cb);
 }
@@ -173,5 +181,7 @@ init_gcc_module (const char * plugin_name)
     Py_DECREF(event);
     return false;
   }
-  return true;
+  res = init_module_gcc_tree (gcc_module);
+  res = init_module_gcc_tree_code (gcc_module);
+  return res;
 }

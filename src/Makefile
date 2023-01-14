@@ -10,6 +10,8 @@ PYTHON_CONFIG ?= python$(PYTHON_VERSION)-config
 PLUGIN_SOURCE_FILES := \
                        $(SRC_DIR)pyplugcc.cc \
                        $(SRC_DIR)pyplugcc-mgcc.cc \
+                       $(SRC_DIR)pyplugcc-mgcc-tree.cc \
+                       $(SRC_DIR)pyplugcc-mgcc-tree-code.cc \
                        $(SRC_DIR)logging.cc
 
 GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
