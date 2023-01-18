@@ -1,7 +1,7 @@
 SRC_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
-HOST_GCC=g++
-TARGET_GCC=gcc
+HOST_GCC ?= g++
+TARGET_GCC ?= gcc
 PYTHON ?= python3
 PYTHON_VERSION= $(shell $(PYTHON) -c \
   "import sys; print('.'.join(sys.version.partition(' ')[0].rsplit('.')[0:-1]))")
@@ -32,7 +32,7 @@ PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
 LD_FLAGS+= $(shell $(PYTHON_CONFIG) --ldflags)
 LD_FLAGS+= -lpython$(PYTHON_VERSION)
 
-PLUGIN_LIB_PATH=$(SRC_DIR)py$(PYTHON_VERSION)_plugcc$(GCC_MAJOR).so
+PLUGIN_LIB_PATH=$(SRC_DIR)pyplugcc$(GCC_MAJOR).so
 PLUGIN_NAME=$(shell basename $(PLUGIN_LIB_PATH) .so)
 
 $(PLUGIN_LIB_PATH): $(PLUGIN_SOURCE_FILES)
