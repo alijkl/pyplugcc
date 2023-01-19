@@ -1,0 +1,57 @@
+{
+    "blocks": [
+	{
+	    "script": "py/a01_hello.py",
+	    "units": ["c/a01_hello.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": ["Hello, World!"],
+	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a01_hello.py",
+	    "units": ["c++/a01_hello.cc"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": ["Hello, World!"],
+	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a01_register_callback.py",
+	    "units": ["c/a01_hello.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": [
+		"CB plugin_finish_decl",
+		"CB plugin_finish_type",
+		"CB plugin_pass_execution"
+	    ],
+	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a01_register_callback.py",
+	    "units": ["c++/a01_hello.cc"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": [
+		"CB plugin_finish_decl",
+		"CB plugin_finish_type",
+		"CB plugin_pass_execution"
+	    ],
+	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a02_gcc_tree.py",
+	    "units": ["c/a01_hello.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": ["<class 'GccTree'>"],
+	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a02_gcc_tree_code.py",
+	    "units": ["c/a01_hello.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": [
+		"ABSU_EXPR", "BIND_EXPR", "CALL_EXPR", "DEBUG_BEGIN_STMT",
+		"BREAK_STMT", "EXCESS_PRECISION_EXPR", "USERDEF_LITERAL"
+	    ],
+	    "result_stderr_contains": []
+	}
+    ]
+}

@@ -8,29 +8,17 @@ $(TEST_DIR)gccpy.sh:
 	@echo -e \#\!/bin/sh \\nscript=$$\1\; shift \1 \\n$(TARGET_GCC) -Wall -Werror \\\\\\n -fplugin=$(PLUGIN_LIB_PATH) \\\\\\n -fplugin-arg-$(PLUGIN_NAME)-script=\$${script} \$$* > $@
 	chmod +x $@
 
-a01_hello: $(PLUGIN_LIB_PATH) $(TEST_DIR)gccpy.sh
-	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/a01_hello.py \
-          -c $(TEST_DIR)c/a01_hello.c -o /dev/null
-	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/a01_hello.py \
-	  -c $(TEST_DIR)c++/a01_hello.cc -o /dev/null -l stdc++
+$(TEST_DIR)pyplugcc.conf:
+	$(PYTHON) $(TEST_DIR)pyplugcc_cli.py -c $@ \
+        --gcc $(TARGET_GCC) --plugin_path $(PLUGIN_LIB_PATH) --config_dump
 
-a01_register_callback:$(PLUGIN_LIB_PATH) $(TEST_DIR)gccpy.sh
-	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/$@.py \
-          -c $(TEST_DIR)c/a01_hello.c -o /dev/null
-	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/$@.py \
-          -c $(TEST_DIR)c++/a01_hello.cc -o /dev/null
+base_test:$(PLUGIN_LIB_PATH) $(TEST_DIR)pyplugcc.conf $(TEST_DIR)test_cli.py $(TEST_DIR)base-test.json
+	$(PYTHON) $(TEST_DIR)test_cli.py -c $(TEST_DIR)pyplugcc.conf -t $(TEST_DIR)base-test.json 2> /dev/null
 
-a02_gcc_tree:$(PLUGIN_LIB_PATH) $(TEST_DIR)gccpy.sh
-	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/$@.py \
-          -c $(TEST_DIR)c/a01_hello.c -o /dev/null
-
-a02_gcc_tree_code:$(PLUGIN_LIB_PATH) $(TEST_DIR)gccpy.sh
-	$(TEST_DIR)gccpy.sh $(TEST_DIR)py/$@.py \
-          -c $(TEST_DIR)c/a01_hello.c -o /dev/null
-
-test:a01_hello a01_register_callback a02_gcc_tree a02_gcc_tree_code
+test: base_test
 
 clean::
-	$(RM) $(TEST_DIR)gccpy.sh
+	$(RM) $(TEST_DIR)gccpy.sh $(TEST_DIR)pyplugcc.conf
+	$(RM) -r $(TEST_DIR)__pycache__/
 
-.phony: test 
+.phony: test base_test

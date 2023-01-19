@@ -1,0 +1,106 @@
+from pyplugcc_cli import PyPlugGccCli
+import os
+import sys
+import json
+import logging
+from logging.handlers import TimedRotatingFileHandler
+import subprocess
+import time
+
+logger = logging.getLogger(os.path.basename(__file__))
+
+class Expected_Error(Exception): pass
+class TestCli_Error(Exception): pass
+
+class TestCli (PyPlugGccCli):
+    def __init__(self):
+        super().__init__()
+        self.parser.add_argument(
+            '-t', '--test_config', help='test config file', default=''
+        )
+    @property
+    def config_path(self):
+        if 'test_config' in cli.args:
+            return cli.args.test_config
+
+
+class TestRunOne:
+    def __init__(self, cmd=None):
+        self.cmd = cmd
+        self.script = ''
+        self.units = []
+        self.stdout = ''
+        self.stderr = ''
+        # self.env = os.environ
+
+class TestRun:
+    def __init__(self):
+        self.config = None
+        self.blocks = None
+        self.cmd = None
+
+    def load (self, config):
+        if isinstance(config, TestCli):
+            self.config = config
+        with open (self.config.config_path, 'r') as f:
+            self.blocks = json.load (f)
+
+    def check_output(self, proc_output, expected=[]):
+        result = [True]
+        for e in expected:
+            idx = proc_output.find(e)
+            logger.debug("lookup: {} -> {}".format (e, idx))
+            result.append (idx >= 0)
+        return all(result)
+
+    def run(self):
+        for blk in self.blocks['blocks']:
+            script = blk['script']
+            units = blk['units']
+            options = blk['options']
+            rstdoutc = blk['result_stdout_contains']
+            rstderrc = blk['result_stderr_contains']
+            self.config.c.plugin_script = script
+            run_cmd = "{} {} {}".format(
+                self.config.cmd, options, " ".join(units)
+            ).split()
+            logger.info(" ".join(run_cmd[:]))
+            c = subprocess.Popen(
+                args=run_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE
+            )
+            try:
+                outs, errs = c.communicate(timeout=None)
+                for i in range(1, 360):
+                    if c.returncode is not None: break
+                    time.sleep(1)
+                result = self.check_output(outs.decode(), rstdoutc)
+                if not result:
+                    logger.info (outs.decode())
+                    logger.error ("result: {}".format(result))
+                    raise TestCli_Error
+            except subprocess.CalledProcessError as e:
+                raise
+            except Expected_Error as e:
+                pass
+            except Exception as e:
+                raise
+            finally:
+                test_name = "{} ({})".format(
+                    script, os.path.basename(" ".join(units))
+                )
+                result_str = 'OK' if result else 'ERROR'
+                pad = (89 - len(test_name) - len (result_str)) * '-'
+                print ("| {} {} {} |".format(test_name, pad, result_str))
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        format='%(asctime)s %(message)s', level=logging.INFO
+    )
+    cli = TestCli()
+    cli.parse_argument()
+    logger.debug (cli.cmd)
+    logger.debug (cli.config_path)
+
+    t = TestRun()
+    t.load(cli)
+    t.run()
