@@ -18,11 +18,21 @@ class TestCli (PyPlugGccCli):
         self.parser.add_argument(
             '-t', '--test_config', help='test config file', default=''
         )
+        self.parser.add_argument(
+            '-v', '--verbose', help='verbose', default=None, action='store_true'
+        )
+        self.parser.add_argument(
+            '-i', '--test_indexes', help='run only test numbers',
+            nargs='*', type=int
+        )
+        self.parser.add_argument(
+            '-e', '--exit_on_error', help='exit at first error',
+            default=None, action='store_true'
+        )
     @property
     def config_path(self):
         if 'test_config' in cli.args:
             return cli.args.test_config
-
 
 class TestRunOne:
     def __init__(self, cmd=None):
@@ -53,8 +63,12 @@ class TestRun:
             result.append (idx >= 0)
         return all(result)
 
-    def run(self):
+    def run(self, verbose=False, test_indexes=[], exit_on_error=False):
+        tidx = 0
+        ttot = len(self.blocks['blocks'])
         for blk in self.blocks['blocks']:
+            tidx += 1
+            if test_indexes and tidx not in test_indexes: continue
             script = blk['script']
             units = blk['units']
             options = blk['options']
@@ -73,15 +87,22 @@ class TestRun:
                 for i in range(1, 360):
                     if c.returncode is not None: break
                     time.sleep(1)
-                result = self.check_output(outs.decode(), rstdoutc)
+                result = c.returncode == 0
                 if not result:
-                    logger.info (outs.decode())
-                    logger.error ("result: {}".format(result))
                     raise TestCli_Error
+                result = self.check_output(outs.decode(), rstdoutc)
+                if not result or verbose:
+                    logger.info (outs.decode())
+                    if not result: raise TestCli_Error
             except subprocess.CalledProcessError as e:
                 raise
             except Expected_Error as e:
                 pass
+            except TestCli_Error:
+                if exit_on_error:
+                    return
+                else:
+                    pass
             except Exception as e:
                 raise
             finally:
@@ -90,17 +111,26 @@ class TestRun:
                 )
                 result_str = 'OK' if result else 'ERROR'
                 pad = (89 - len(test_name) - len (result_str)) * '-'
-                print ("| {} {} {} |".format(test_name, pad, result_str))
+                print ("| {:>3}/{:<3} {} {} {} |".format(
+                    tidx, ttot, test_name, pad, result_str))
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        format='%(asctime)s %(message)s', level=logging.INFO
-    )
     cli = TestCli()
     cli.parse_argument()
+    verbose = cli.args.verbose
+    test_indexes = cli.args.test_indexes if cli.args.test_indexes else []
+    test_indexes.sort()
+    exit_on_error = cli.args.exit_on_error
+    logging_level = logging.DEBUG if verbose else logging.ERROR
+    logging.basicConfig(
+        format='%(asctime)s %(message)s', level=logging_level
+    )
     logger.debug (cli.cmd)
     logger.debug (cli.config_path)
-
     t = TestRun()
     t.load(cli)
-    t.run()
+    t.run(
+        verbose=verbose,
+        test_indexes=test_indexes,
+        exit_on_error=exit_on_error
+    )
