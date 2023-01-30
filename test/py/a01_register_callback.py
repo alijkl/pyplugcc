@@ -1,16 +1,16 @@
 import gcc
 from gcc.event import *
 
-def gen_call(*args,**kwargs):
-    if args: print (args)
+def gen_call(t):
+    if t: print (t)
 
-def plugin_finish_type(*args):
+def plugin_finish_type(t):
     gen_call("CB plugin_finish_type")
 
-def plugin_finish_decl(*args):
+def plugin_finish_decl(t):
     gen_call("CB plugin_finish_decl")
 
-def plugin_pass_execution(*args):
+def plugin_pass_execution(t):
     gen_call("CB plugin_pass_execution")
 
 gcc.register_callback(

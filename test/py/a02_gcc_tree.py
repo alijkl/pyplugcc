@@ -4,8 +4,8 @@ from gcc.tree_code_base import *
 from gcc.tree_code_lang_c import *
 from gcc import GccTree
 
-def at_execution_call(*args,**kwargs):
-    assert isinstance(args[0], GccTree)
+def at_execution_call(t):
+    assert isinstance(t, GccTree)
 
 gcc.register_callback(
     gcc.plugin_name, PLUGIN_PASS_EXECUTION, at_execution_call, None
