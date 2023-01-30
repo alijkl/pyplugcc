@@ -1,0 +1,182 @@
+import cm2fun
+import os
+import re
+import textwrap
+from pathlib import Path
+
+def lookup_return_type (f, q):
+    f.seek(0)
+    for l in f:
+        l = l.strip()
+        if not l or l[0] == '#': continue
+        a, b, c = l.rpartition('⏎')
+        if a.strip() == q:
+            return [n.strip() for n in c.split(',')]
+
+def build_py_func (f, p, rc, rp, pad=0, doc=''):
+    doc = textwrap.fill(doc, 79)
+    doc = doc.replace('/* ', '/*\n' )
+    doc = doc.replace(' */', '\n*/' )
+    pad = ' ' * pad
+    if rp == 'tree':
+        result="""{3}
+{0}PyObject *Py_{1}(PyObject *self, PyObject *args) {{
+{0}  PyObject *{2};
+{0}  if (!PyArg_ParseTuple (args, "O:Py_{1}", &{2})) return NULL;
+{0}  void *t = {1}((tree) Get_gccdata({2}));
+{0}  PyObject *result = PyGccTree_New();
+{0}  Set_gccdata(result, (void*) t);
+{0}  return result;
+{0}}}
+""".format(pad, f, p, '\n' + doc if doc else '')
+        return result
+    elif rc:
+        result="""{5}
+{0}PyObject *Py_{1}(PyObject *self, PyObject *args) {{
+{0}  PyObject *{2};
+{0}  if (!PyArg_ParseTuple (args, "O:Py_{1}", &{2})) return NULL;
+{0}  {3} t = {1}((tree) Get_gccdata({2}));
+{0}  PyObject *result = Py_BuildValue("{4}", t);
+{0}  return result;
+{0}}}
+""".format(pad, f, p, rc, rp, '\n' + doc if doc else '')
+        return result
+
+def build_meth_def (f, pad=0, doc=''):
+    doc = doc.split('.')[0].replace('/*','').strip() if doc else ''
+    result = """{0}  {{
+{0}    .ml_name  = "{1}",
+{0}    .ml_meth  = (PyCFunction)Py_{1},
+{0}    .ml_flags = METH_VARARGS,
+{0}    .ml_doc   = "{2}"
+{0}  }},
+""".format (' ' * pad, f, doc)
+    return result
+
+def build_meth_def_foot (f=None, pad=0, doc=''):
+    result = """{0}  {{ /* Sentinel */
+{0}    .ml_name  = NULL,
+{0}    .ml_meth  = NULL,
+{0}    .ml_flags = 0,
+{0}    .ml_doc   = NULL
+{0}  }}
+{0}}};
+""".format(' ' * pad)
+    return result
+
+if __name__ == "__main__":
+    cm = cm2fun.CmReader()
+    cm.cli.add_argument(
+        "-c", "--config", help="accessor config", default='node-accessors.cf',
+    )
+    cm.cli.add_argument(
+        "-d", "--out_dir", help="directory to generate in", default='',
+    )
+    m = cm2fun.read_header(cm)
+    os.chdir (os.path.dirname (__file__))
+    out_dir = os.path.dirname(cm.args.out_dir) if cm.args.out_dir else \
+        os.path.join(os.path.dirname(__file__), '..')
+    processed = set()
+    out_c = "{}.cc".format(os.path.basename (cm.args.config)[:-3])
+    out_h = "{}.h".format(os.path.basename (cm.args.config)[:-3])
+    mde_h = "{}-mdef.h".format(os.path.basename (cm.args.config)[:-3])
+    with open (os.path.join(out_dir,out_c), 'w') as out_c_f, \
+         open (os.path.join(out_dir,out_h), 'w') as out_h_f, \
+         open (os.path.join(out_dir,mde_h), 'w') as mde_h_f:
+        mde_h_f.write (
+            """#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#include "{0}"
+
+static PyMethodDef Node_Methods[] = {{
+""".format (out_h)
+        )
+
+        out_h_f.write (
+            """#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+
+"""
+        )
+        out_c_f.write(
+            """#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#include <gcc-plugin.h>
+#include "tree.h"
+#include "pyplugcc-mgcc-tree.h"
+
+"""
+        )
+        with open (cm.args.config) as a:
+            for b in m:
+                r = re.match('^#define\s+((\w+)\s*\(\s*(\w+)\s*\))', b[1])
+                if not r: continue
+                q = r[1] if r else ''
+                t = lookup_return_type (a, q) if q else ''
+                if not t: continue
+                f_name=r[2].strip()
+                p_name=r[3].strip()
+                if "{} {}".format(f_name, p_name) in processed: continue
+                f = build_py_func(
+                    f=f_name, p=p_name, rc=t[0], rp=t[1],pad=0,doc=b[3]
+                )
+                sidx = 0
+                if f.find('/*') > -1:
+                    sidx=f.find('*/') + 2
+                fh=f[sidx:f.find("{")]
+                fh = fh.strip() + ';'
+                out_h_f.write (fh + '\n')
+                out_c_f.write (f + '\n')
+                mde_h_f.write (
+                    build_meth_def (f=f_name, pad=0, doc=b[3])
+                )
+                processed.add ("{} {}".format(f_name, p_name))
+            # mde_h_f.write (
+            #     build_meth_def_foot()
+            # )
+        # fixed user functions
+        p = Path('node-accessors.d')
+        user_sources = list(p.glob('*.cc'))
+        for s in user_sources:
+            src_buff = ''
+            com_buff = ''
+            com_start = False
+            com_start_idx = -1
+            com_end_idx = None
+            with s.open() as sf:
+                while True:
+                    l = sf.readline()
+                    if l == '': break
+                    if not com_start:
+                        com_start_idx = l.find('/*')
+                        if com_start_idx >= 0: com_start = True
+                    if com_start:
+                        com_end_idx = l.find('*/')
+                        com_end_idx = None if com_end_idx < 0 else com_end_idx
+                        com_buff += l[com_start_idx:com_end_idx]
+                        com_start_idx = 0
+                        if com_end_idx is not None: com_start = False
+                    else:
+                        src_buff += (l)
+                com_buff = com_buff.replace('\n', ' ').replace('  ',' ')
+                com_end_idx = com_buff.find('/*')
+                if com_end_idx > -1 : com_buff=com_buff[com_end_idx + len('/*'):]
+            com_buff = com_buff.strip()
+            src_buff =  src_buff.strip()
+            first_src = src_buff.find('{')
+            first_src = src_buff[:first_src].strip().replace('\n', ' ') + ';'
+            f_name = first_src[first_src.find('Py_') + 3:first_src.find('(')]
+            out_h_f.write (first_src + '\n')
+            out_c_f.write ("""
+/*
+{}
+*/
+{}
+""". format(com_buff, src_buff))
+            mde_h_f.write (
+                build_meth_def (f=f_name, pad=0, doc=com_buff)
+            )
+
+        mde_h_f.write (
+            build_meth_def_foot()
+        )

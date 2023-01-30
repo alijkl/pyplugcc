@@ -40,7 +40,10 @@ static void py_gcc_call (void *gcc_data, void *user_data) {
     pgs = PyGILState_Ensure();
     result = PyObject_CallFunctionObjArgs(cb->callback_func, args, NULL);
     PyGILState_Release(pgs);
-    if (! result) return;
+    if (! result) {
+      PyErr_Print();
+      exit(EXIT_FAILURE);
+    }
   }else{
     sprintf(buffer, "warning skip %s non callable", py_repr(cb->callback_func));
     LOG(buffer);
@@ -89,9 +92,9 @@ py_register_callback(PyObject *self, PyObject *args)
     Py_INCREF(callback_func);
 
     register_callback(plugin_name, event, &py_gcc_call, cb);
-    sprintf (buffer, "register_callback(%s, %i, %s, %p)\n",
-	     plugin_name, event, py_repr(cb->callback_func), cb);
-    LOG(buffer);
+    // sprintf (buffer, "register_callback(%s, %i, %s, %p)\n",
+    // 	     plugin_name, event, py_repr(cb->callback_func), cb);
+    // LOG(buffer);
   }else{
     // FIXME register_callback(plugin_name, event, NULL, specific_user_data);
   }

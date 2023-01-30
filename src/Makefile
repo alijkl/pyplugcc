@@ -8,11 +8,14 @@ PYTHON_VERSION= $(shell $(PYTHON) -c \
 PYTHON_CONFIG ?= python$(PYTHON_VERSION)-config
 
 PLUGIN_SOURCE_FILES := \
+                       $(SRC_DIR)logging.cc \
                        $(SRC_DIR)pyplugcc.cc \
                        $(SRC_DIR)pyplugcc-mgcc.cc \
                        $(SRC_DIR)pyplugcc-mgcc-tree.cc \
                        $(SRC_DIR)pyplugcc-mgcc-tree-code.cc \
-                       $(SRC_DIR)logging.cc
+                       $(SRC_DIR)node-accessors.cc \
+                       $(SRC_DIR)pyplugcc-mgcc-mnode.cc \
+
 
 GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
 GCC_MAJOR := $(shell \
@@ -38,7 +41,15 @@ PLUGIN_NAME=$(shell basename $(PLUGIN_LIB_PATH) .so)
 $(PLUGIN_LIB_PATH): $(PLUGIN_SOURCE_FILES)
 	$(HOST_GCC) -shared $(CXXFLAGS) $(PYTHON_INCLUDE) $(LD_FLAGS) $^ -o $@
 
+$(SRC_DIR)node-accessors.cc $(SRC_DIR)node-accessors.h: \
+  $(SRC_DIR)gen/node-accessors.cf $(SRC_DIR)gen/accessor2fun.py \
+  $(wildcard $(SRC_DIR)gen/node-accessors.d/*.cc)
+	$(PYTHON) $(SRC_DIR)gen/accessor2fun.py
+
 clean::
 	$(RM) $(PLUGIN_LIB_PATH)
 	$(RM) $(SRC_DIR)*.o $(SRC_DIR)*~
+	$(RM) -r $(SRC_DIR)gen/__pycache__/
 
+distclean: clean
+	$(RM) $(SRC_DIR)node-accessors*.{cc,h}

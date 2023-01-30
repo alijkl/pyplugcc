@@ -5,6 +5,7 @@
 #include "logging.h"
 #include <plugin-version.h>
 #include "pyplugcc-mgcc.h"
+#include "pyplugcc-mgcc-mnode.h"
 
 #if PY_VERSION_HEX < 0x03090000
 #error this GCC plugin is for Python >=3.9
@@ -101,6 +102,16 @@ plugin_init (struct plugin_name_args *plugin_info,
        buffer,
        "%s adding %s module to the existing table of built-in modules\n",
        err_str.c_str(), "gcc"
+       );
+    LOG(buffer);
+    return EXIT_FAILURE;
+  }
+  if (PyImport_AppendInittab("node", PyInit_node) == -1) {
+    sprintf
+      (
+       buffer,
+       "%s adding %s module to the existing table of built-in modules\n",
+       err_str.c_str(), "gcc.node"
        );
     LOG(buffer);
     return EXIT_FAILURE;

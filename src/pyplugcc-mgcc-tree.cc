@@ -1,7 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "logging.h"
-#include "structmember.h"
 
 /*
   GccTree is a Python Class Object
