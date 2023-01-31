@@ -8,6 +8,7 @@
 #include "pyplugcc-mgcc-tree.h"
 #include "pyplugcc-mgcc-tree-code.h"
 #include "tree.h"
+#include "diagnostic.h"
 
 static const char* py_repr(PyObject *obj) {
   PyObject* repr = PyObject_Repr(obj);
@@ -60,7 +61,7 @@ is_event_without_callback (int event) {
 }
 
 static PyObject *
-py_register_callback(PyObject *self, PyObject *args)
+Py_register_callback(PyObject *self, PyObject *args)
 {
   char buffer[200];
   char *plugin_name;
@@ -102,15 +103,33 @@ py_register_callback(PyObject *self, PyObject *args)
   return Py_None;
 }
 
+/* The number of errors that have been issued so far. */
+PyObject *Py_errorcount(PyObject *self, PyObject *args) {
+  PyObject *result = Py_BuildValue("i", errorcount);
+  return result;
+}
+
+/* Similarly, but for sorrys.  */
+PyObject *Py_sorrycount(PyObject *self, PyObject *args) {
+  PyObject *result = Py_BuildValue("i", sorrycount);
+  return result;
+}
 
 char * gcc_doc = NULL;
 
 static PyMethodDef Gcc_Methods[] = {
   {
-    "register_callback",  (PyCFunction)py_register_callback, METH_VARARGS,
+    "register_callback",  (PyCFunction)Py_register_callback, METH_VARARGS,
     "gcc callback command."
   },
-
+  {
+    "errorcount",  (PyCFunction)Py_errorcount, METH_NOARGS,
+    "The number of errors that have been issued so far."
+  },
+  {
+    "sorrycount",  (PyCFunction)Py_sorrycount, METH_NOARGS,
+    "The number of sorrys that have been issued so far."
+  },
   {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
