@@ -78,7 +78,7 @@ def single_line_header_macro(h):
                 if lookup == 'define':
                     mbuf[idx][1] = mbuf[idx][1] + (line[:-1]).strip()
                 else:
-                    mbuf[idx][1] + line.strip() + ' '
+                    mbuf[idx][1] = mbuf[idx][1] + line.strip() + ' '
             elif defined:
                 mbuf[idx][1] = mbuf[idx][1] + line
                 idx = idx + 1
