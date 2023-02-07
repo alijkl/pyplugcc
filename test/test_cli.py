@@ -1,16 +1,20 @@
 from pyplugcc_cli import PyPlugGccCli
 import os
-import sys
 import json
 import logging
-from logging.handlers import TimedRotatingFileHandler
 import subprocess
 import time
 
 logger = logging.getLogger(os.path.basename(__file__))
 
-class Expected_Error(Exception): pass
-class TestCli_Error(Exception): pass
+
+class Expected_Error(Exception):
+    pass
+
+
+class TestCli_Error(Exception):
+    pass
+
 
 class TestCli (PyPlugGccCli):
     def __init__(self):
@@ -19,7 +23,8 @@ class TestCli (PyPlugGccCli):
             '-t', '--test_config', help='test config file', default=''
         )
         self.parser.add_argument(
-            '-v', '--verbose', help='verbose', default=None, action='store_true'
+            '-v', '--verbose', help='verbose', default=None,
+            action='store_true'
         )
         self.parser.add_argument(
             '-i', '--test_indexes', help='run only test numbers',
@@ -29,10 +34,12 @@ class TestCli (PyPlugGccCli):
             '-e', '--exit_on_error', help='exit at first error',
             default=None, action='store_true'
         )
+
     @property
     def config_path(self):
         if 'test_config' in cli.args:
             return cli.args.test_config
+
 
 class TestRunOne:
     def __init__(self, cmd=None):
@@ -43,24 +50,25 @@ class TestRunOne:
         self.stderr = ''
         # self.env = os.environ
 
+
 class TestRun:
     def __init__(self):
         self.config = None
         self.blocks = None
         self.cmd = None
 
-    def load (self, config):
+    def load(self, config):
         if isinstance(config, TestCli):
             self.config = config
-        with open (self.config.config_path, 'r') as f:
-            self.blocks = json.load (f)
+        with open(self.config.config_path, 'r') as f:
+            self.blocks = json.load(f)
 
     def check_output(self, proc_output, expected=[]):
         result = [True]
         for e in expected:
             idx = proc_output.find(e)
-            logger.debug("lookup: {} -> {}".format (e, idx))
-            result.append (idx >= 0)
+            logger.debug("lookup: {} -> {}".format(e, idx))
+            result.append(idx >= 0)
         return all(result)
 
     def run(self, verbose=False, test_indexes=[], exit_on_error=False):
@@ -68,7 +76,8 @@ class TestRun:
         ttot = len(self.blocks['blocks'])
         for blk in self.blocks['blocks']:
             tidx += 1
-            if test_indexes and tidx not in test_indexes: continue
+            if test_indexes and tidx not in test_indexes:
+                continue
             script = blk['script']
             units = blk['units']
             options = blk['options']
@@ -80,20 +89,26 @@ class TestRun:
             ).split()
             logger.info(" ".join(run_cmd[:]))
             c = subprocess.Popen(
-                args=run_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE
+                args=run_cmd, stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
             )
             try:
                 outs, errs = c.communicate(timeout=None)
                 for i in range(1, 360):
-                    if c.returncode is not None: break
+                    if c.returncode is not None:
+                        break
                     time.sleep(1)
                 result = c.returncode == 0
                 if not result:
                     raise TestCli_Error
-                result = self.check_output(outs.decode(), rstdoutc)
+                tmp_o = self.check_output(outs.decode(), rstdoutc)
+                tmp_e = self.check_output(errs.decode(), rstderrc)
+                result = tmp_o and tmp_e
                 if not result or verbose:
-                    logger.info (outs.decode())
-                    if not result: raise TestCli_Error
+                    logger.info(outs.decode())
+                    if not result:
+                        raise TestCli_Error
             except subprocess.CalledProcessError as e:
                 raise
             except Expected_Error as e:
@@ -110,9 +125,10 @@ class TestRun:
                     script, os.path.basename(" ".join(units))
                 )
                 result_str = 'OK' if result else 'ERROR'
-                pad = (89 - len(test_name) - len (result_str)) * '-'
-                print ("| {:>3}/{:<3} {} {} {} |".format(
+                pad = (89 - len(test_name) - len(result_str)) * '-'
+                print("| {:>3}/{:<3} {} {} {} |".format(
                     tidx, ttot, test_name, pad, result_str))
+
 
 if __name__ == "__main__":
     cli = TestCli()
@@ -125,8 +141,8 @@ if __name__ == "__main__":
     logging.basicConfig(
         format='%(asctime)s %(message)s', level=logging_level
     )
-    logger.debug (cli.cmd)
-    logger.debug (cli.config_path)
+    logger.debug(cli.cmd)
+    logger.debug(cli.config_path)
     t = TestRun()
     t.load(cli)
     t.run(
