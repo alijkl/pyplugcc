@@ -13,8 +13,10 @@ PLUGIN_SOURCE_FILES := \
                        $(SRC_DIR)pyplugcc-mgcc.cc \
                        $(SRC_DIR)pyplugcc-mgcc-tree.cc \
                        $(SRC_DIR)pyplugcc-mgcc-tree-code.cc \
-                       $(SRC_DIR)node-accessors.cc \
+                       $(SRC_DIR)pyplugcc-node-accessors.cc \
                        $(SRC_DIR)pyplugcc-mgcc-mnode.cc \
+                       $(SRC_DIR)pyplugcc-print-tree.cc \
+                       $(SRC_DIR)pyplugcc-mprint-tree.cc \
 
 
 GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
@@ -41,10 +43,19 @@ PLUGIN_NAME=$(shell basename $(PLUGIN_LIB_PATH) .so)
 $(PLUGIN_LIB_PATH): $(PLUGIN_SOURCE_FILES)
 	$(HOST_GCC) -shared $(CXXFLAGS) $(PYTHON_INCLUDE) $(LD_FLAGS) $^ -o $@
 
-$(SRC_DIR)node-accessors.cc $(SRC_DIR)node-accessors.h: \
-  $(SRC_DIR)gen/node-accessors.cf $(SRC_DIR)gen/accessor2fun.py \
+$(SRC_DIR)pyplugcc-node-accessors.cc $(SRC_DIR)pyplugcc-node-accessors.h: \
+  $(SRC_DIR)gen/node-accessors.cfg $(SRC_DIR)gen/h2pyfun.py \
   $(wildcard $(SRC_DIR)gen/node-accessors.d/*.cc)
-	$(PYTHON) $(SRC_DIR)gen/accessor2fun.py
+	$(PYTHON) $(SRC_DIR)gen/h2pyfun.py \
+         -c $(SRC_DIR)gen/node-accessors.cfg \
+         --header $(GCCPLUGINS_DIR)/include/tree.h
+
+$(SRC_DIR)pyplugcc-print-tree.cc $(SRC_DIR)pyplugcc-pyplugcc-print-tree.h: \
+   $(SRC_DIR)gen/print-tree.cfg $(SRC_DIR)gen/h2pyfun.py \
+   $(wildcard $(SRC_DIR)gen/print-tree.d/*.cc)
+	$(PYTHON) $(SRC_DIR)gen/h2pyfun.py \
+         -c $(SRC_DIR)gen/print-tree.cfg \
+         --header $(GCCPLUGINS_DIR)/include/print-tree.h
 
 clean::
 	$(RM) $(PLUGIN_LIB_PATH)
@@ -52,4 +63,5 @@ clean::
 	$(RM) -r $(SRC_DIR)gen/__pycache__/
 
 distclean: clean
-	$(RM) $(SRC_DIR)node-accessors*.{cc,h}
+	$(RM) $(SRC_DIR)pyplugcc-node-accessors*.{cc,h}
+	$(RM) $(SRC_DIR)pyplugcc-print-tree*.{cc,h}

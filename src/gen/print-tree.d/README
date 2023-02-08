@@ -1,5 +1,5 @@
 Add user defined functions into the build tree
-node-accessors.cc,  node-accessors.h, node-accessors-mdef.h
+print-tree.cc,  print-tree.h, print-tree-mdef.h
 
 * one function block per file
 * function name must start with 'Py_'

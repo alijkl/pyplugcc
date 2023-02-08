@@ -15,10 +15,6 @@ struct GccTree {
 typedef PyTypeObject _PyGccTreeType;
 _PyGccTreeType *PyGccTreeType;
 
-PyObject *PyGccTree_New(){
-  return _PyObject_New((PyTypeObject*)PyGccTreeType);
-}
-
 Py_ssize_t PyInstanceMethod_basicsize() {
   return PyLong_AsSsize_t
     (
@@ -43,6 +39,17 @@ void* Get_gccdata(PyObject* self)
 {
   GccTree* p_data = (GccTree*)((uintptr_t)(self) + PyInstanceMethod_basicsize());
   return p_data->gccdata;
+}
+
+PyObject *PyGccTree_New(void* gccdata = NULL){
+   PyObject *t = _PyObject_New((PyTypeObject*)PyGccTreeType);
+   if (Set_gccdata(t, gccdata)) {
+     Py_INCREF(t);
+     return t;
+   }else{
+     Py_XDECREF(t);
+     Py_RETURN_NONE;
+   }
 }
 
 bool
