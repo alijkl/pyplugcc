@@ -52,6 +52,39 @@
 		"BREAK_STMT", "EXCESS_PRECISION_EXPR", "USERDEF_LITERAL"
 	    ],
 	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a03_gcc_node.py",
+	    "units": ["c/a01_hello.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": [
+		"module 'gcc.node' (built-in)",
+		"TREE_CHAIN", "TREE_CODE"
+	    ],
+	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a03_gcc_node_print.py",
+	    "units": ["c/a03_fun.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": ["finish_parse_function", "test123"],
+	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a04_cb_enum.py",
+	    "units": ["c/a04_enum.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": [
+		"days",
+		"Sunday", "Monday", "Tuesday", "Wednesday",
+		"Thursday", "Friday", "Saturday",
+		"months",
+		"January", "February", "March", "April", "May",
+		"June", "July", "August", "September",
+		"October", "November", "December"
+	    ],
+	    "result_stderr_contains": []
 	}
+
     ]
 }
