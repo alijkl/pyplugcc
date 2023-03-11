@@ -1,22 +1,35 @@
-import sys
+# import sys
 import gcc
-from gcc.event import *
-from gcc.tree_code_base import *
-from gcc.tree_code_lang_c import *
-from gcc import GccTree
-from node import *
-from print_tree import debug_tree, node_as_string, node_brief_as_string
+from gcc.event import PLUGIN_FINISH_TYPE, PLUGIN_FINISH_DECL
+from gcc.tree_code_base import TYPE_DECL, ENUMERAL_TYPE
+# from gcc.tree_code_lang_c import *
+# from gcc import GccTree
+from node import TREE_CODE, TREE_TYPE, IS_NULL_TREE, TYPE_NAME
+from node import IDENTIFIER_POINTER, DECL_CHAIN
+from node import DECL_SOURCE_FILE, DECL_SOURCE_LINE, DECL_SOURCE_COLUMN
+from node import TYPE_VALUES, TREE_VALUE, TREE_PURPOSE, tree_to_shwi, TREE_CHAIN
+# from print_tree import debug_tree, node_as_string, node_brief_as_string
 
 
-def enumeral_type_dump (t, n):
+def enumeral_type_dump(t, n):
     # debug_tree(t)
     # print(file=sys.stderr)
-    print (node_brief_as_string(t, 'brief:'))
-    print (node_as_string(t, 'full:'))
-    
+    # print(node_brief_as_string(t, 'brief:'))
+    # print(node_as_string(t, 'full:'))
+
     enum_name = IDENTIFIER_POINTER(n)
-    print ("{}".format(enum_name))
+    field = DECL_CHAIN(t)
+    print(
+        "\n# {} {}:{}".format
+        (
+            DECL_SOURCE_FILE(field),
+            DECL_SOURCE_LINE(field),
+            DECL_SOURCE_COLUMN(field)
+        )
+    )
+    print("{}".format(enum_name))
     v = TYPE_VALUES(t)
+
     while (not IS_NULL_TREE(v)):
         tval = TREE_VALUE(v)
         print(
@@ -25,19 +38,23 @@ def enumeral_type_dump (t, n):
             )
         )
         v = TREE_CHAIN(v)
-    print ()
+    print()
+
 
 def plugin_finish_type(t):
     if gcc.errorcount() or gcc.sorrycount(): return
+    if IS_NULL_TREE(t): return
     if TREE_CODE(t) != ENUMERAL_TYPE: return
-    if IS_NULL_TREE (TYPE_NAME(t)): return
-    enumeral_type_dump (t, TYPE_NAME(t))
+    if IS_NULL_TREE(TYPE_NAME(t)): return
+    enumeral_type_dump(t, TYPE_NAME(t))
+
 
 def plugin_finish_decl(t):
     if gcc.errorcount() or gcc.sorrycount(): return
     if TREE_CODE(t) != TYPE_DECL: return
-    if TREE_CODE (TREE_TYPE(t)) != ENUMERAL_TYPE: return
-    enumeral_type_dump (t, DECL_NAME (t))
+    if TREE_CODE(TREE_TYPE(t)) != ENUMERAL_TYPE: return
+    enumeral_type_dump(t, DECL_NAME(t))
+
 
 gcc.register_callback(
     gcc.plugin_name, PLUGIN_FINISH_TYPE, plugin_finish_type, None
