@@ -101,7 +101,7 @@ class TestRun:
                     time.sleep(1)
                 result = c.returncode == 0
                 if not result:
-                    raise TestCli_Error
+                    raise TestCli_Error(errs.decode())
                 tmp_o = self.check_output(outs.decode(), rstdoutc)
                 tmp_e = self.check_output(errs.decode(), rstderrc)
                 result = tmp_o and tmp_e
@@ -113,8 +113,10 @@ class TestRun:
                 raise
             except Expected_Error as e:
                 pass
-            except TestCli_Error:
+            except TestCli_Error as e:
                 if exit_on_error:
+                    if e.args:
+                        logger.error("\n".join(e.args))
                     return
                 else:
                     pass
