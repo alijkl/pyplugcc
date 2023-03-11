@@ -103,6 +103,7 @@ def generate(m=[], file_cc=None, file_h=None, file_met=None, file_cfg=None,
     processed = set()
     bs = BlockStr()
     for e in m:
+        print(e[1])
         logger.debug(e[1])
         if not e[1].startswith('extern '):
             continue
