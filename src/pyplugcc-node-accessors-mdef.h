@@ -52,10 +52,34 @@ static PyMethodDef Node_Accessors_Methods[] = {
     .ml_doc   = ""
   },
   {
+    .ml_name  = "DECL_CHAIN",
+    .ml_meth  = (PyCFunction)Py_DECL_CHAIN,
+    .ml_flags = METH_VARARGS,
+    .ml_doc   = ""
+  },
+  {
     .ml_name  = "DECL_NAME",
     .ml_meth  = (PyCFunction)Py_DECL_NAME,
     .ml_flags = METH_VARARGS,
     .ml_doc   = "This is the name of the object as written by the user"
+  },
+  {
+    .ml_name  = "DECL_SOURCE_FILE",
+    .ml_meth  = (PyCFunction)Py_DECL_SOURCE_FILE,
+    .ml_flags = METH_VARARGS,
+    .ml_doc   = ""
+  },
+  {
+    .ml_name  = "DECL_SOURCE_LINE",
+    .ml_meth  = (PyCFunction)Py_DECL_SOURCE_LINE,
+    .ml_flags = METH_VARARGS,
+    .ml_doc   = ""
+  },
+  {
+    .ml_name  = "DECL_SOURCE_COLUMN",
+    .ml_meth  = (PyCFunction)Py_DECL_SOURCE_COLUMN,
+    .ml_flags = METH_VARARGS,
+    .ml_doc   = ""
   },
       {
         .ml_name  = "protected_set_expr_location",

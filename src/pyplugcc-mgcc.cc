@@ -31,9 +31,7 @@ static void py_gcc_call (void *gcc_data, void *user_data) {
   struct py_callback_struct *cb = (struct py_callback_struct *)user_data;
   PyObject *args = NULL;
   PyObject *result;
-  PyObject *pytree = PyGccTree_New();
-  // printf ("pytree i: %p\n", gcc_data);
-  Set_gccdata (pytree, gcc_data);
+  PyObject *pytree = PyGccTree_New(gcc_data);
   // printf ("pytree o: %p\n", Get_gccdata (pytree));
   args = Py_BuildValue("O",pytree);
 

@@ -8,7 +8,7 @@
  */
 
 struct GccTree {
-  void *gccdata;
+  void *gccdata = NULL;
 };
 
 
@@ -56,7 +56,7 @@ bool
 init_module_gcc_tree (PyObject *gcc_module)
 {
   char buffer[200];
-
+  // printf ("sizeof(GccTree) %li", sizeof(GccTree));
   static PyType_Slot GccTree_Type_slots[] = {
     {0, 0},
   };

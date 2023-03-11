@@ -106,6 +106,16 @@ PyObject *Py_TYPE_VALUES(PyObject *self, PyObject *args) {
 }
 
 
+PyObject *Py_DECL_CHAIN(PyObject *self, PyObject *args) {
+  PyObject *NODE;
+  if (!PyArg_ParseTuple (args, "O:Py_DECL_CHAIN", &NODE)) return NULL;
+  void *t = DECL_CHAIN((tree) Get_gccdata(NODE));
+  PyObject *result = PyGccTree_New();
+  Set_gccdata(result, (void*) t);
+  return result;
+}
+
+
 /*
 This is the name of the object as written by the user. It is an
 IDENTIFIER_NODE.
@@ -116,6 +126,33 @@ PyObject *Py_DECL_NAME(PyObject *self, PyObject *args) {
   void *t = DECL_NAME((tree) Get_gccdata(NODE));
   PyObject *result = PyGccTree_New();
   Set_gccdata(result, (void*) t);
+  return result;
+}
+
+
+PyObject *Py_DECL_SOURCE_FILE(PyObject *self, PyObject *args) {
+  PyObject *NODE;
+  if (!PyArg_ParseTuple (args, "O:Py_DECL_SOURCE_FILE", &NODE)) return NULL;
+  const char* t = DECL_SOURCE_FILE((tree) Get_gccdata(NODE));
+  PyObject *result = Py_BuildValue("s", t);
+  return result;
+}
+
+
+PyObject *Py_DECL_SOURCE_LINE(PyObject *self, PyObject *args) {
+  PyObject *NODE;
+  if (!PyArg_ParseTuple (args, "O:Py_DECL_SOURCE_LINE", &NODE)) return NULL;
+  const int t = DECL_SOURCE_LINE((tree) Get_gccdata(NODE));
+  PyObject *result = Py_BuildValue("i", t);
+  return result;
+}
+
+
+PyObject *Py_DECL_SOURCE_COLUMN(PyObject *self, PyObject *args) {
+  PyObject *NODE;
+  if (!PyArg_ParseTuple (args, "O:Py_DECL_SOURCE_COLUMN", &NODE)) return NULL;
+  const int t = DECL_SOURCE_COLUMN((tree) Get_gccdata(NODE));
+  PyObject *result = Py_BuildValue("i", t);
   return result;
 }
 
