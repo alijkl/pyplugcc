@@ -1,5 +1,6 @@
 SRC_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
+DEBUG?=
 HOST_GCC ?= g++
 TARGET_GCC ?= gcc
 PYTHON ?= python3
@@ -28,12 +29,26 @@ endif
 ifneq ($(filter $(GCC_MAJOR),8 9),)
   GCC_STD ?= -std=c++2a
 endif
-GCC_OPT ?=
-GCC_OPT_FLAGS+=$(GCC_STD) $(GCC_OPT)
-CXXFLAGS+= -fPIC -fno-rtti -O2 -Wall $(GCC_OPT_FLAGS)
 
+hardening_flags=-D_FORTIFY_SOURCE=2 -D_GLIBCXX_ASSERTIONS \
+                -fasynchronous-unwind-tables -fexceptions -fpic -shared \
+                -fstack-clash-protection -fstack-protector-strong \
+                -grecord-gcc-switches -fcf-protection -pipe \
+                -Werror=format-security -Wl,-z,now -Wl,-z,relro
+
+GCC_OPT ?=
+ifeq ($(DEBUG),)
+  GCC_OPT+=-O2 $(hardening_flags)
+else
+  GCC_OPT+=-O0 -g3
+endif
+GCC_OPT_FLAGS+=$(GCC_STD) $(GCC_OPT)
+
+CXXFLAGS+= -fPIC -fno-rtti -Wall $(GCC_OPT_FLAGS)
 CXXFLAGS+= -I$(GCCPLUGINS_DIR)/include
+
 PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
+
 LD_FLAGS+= $(shell $(PYTHON_CONFIG) --ldflags)
 LD_FLAGS+= -lpython$(PYTHON_VERSION)
 
