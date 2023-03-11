@@ -2,9 +2,9 @@ TEST_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
 ifeq ($(V),)
 ECHOING := @
-NULL := 2> /dev/null
 else
 EXIT_ON_ERROR := -e
+VERBOSE := -v
 endif
 
 ifneq ($(T),)
@@ -35,8 +35,8 @@ base_test:$(PLUGIN_LIB_PATH) $(TEST_DIR)pyplugcc.conf \
 	$(ECHOING)$(PYTHON) $(TEST_DIR)test_cli.py \
           -c $(TEST_DIR)pyplugcc.conf \
           -t $(TEST_DIR)base-test.json \
-          -v $(TEST_IDX) \
-          $(NULL) $(EXIT_ON_ERROR)
+          $(TEST_IDX) \
+          $(VERBOSE) $(EXIT_ON_ERROR)
 
 test: base_test
 
