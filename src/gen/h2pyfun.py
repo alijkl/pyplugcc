@@ -79,7 +79,7 @@ def build_meth_def_foot(f=None, pad=0, doc=''):
 if __name__ == "__main__":
     cm = cm2fun.CmReader()
     cm.cli.add_argument(
-        "-c", "--config", help="accessor config", default='node-accessors.cf',
+        "-c", "--config", help="accessor config"
     )
     cm.cli.add_argument(
         "-d", "--out_dir", help="directory to generate in", default='',
