@@ -25,7 +25,7 @@ $(TEST_DIR)gccpy.sh:
 	chmod +x $@
 
 $(TEST_DIR)pyplugcc.conf:
-	$(PYTHON) $(TEST_DIR)pyplugcc_cli.py -c $@ \
+	$(CONF_MSG) $(PYTHON) $(TEST_DIR)pyplugcc_cli.py -c $@ \
           --gcc $(TARGET_GCC) \
           --plugin_path $(PLUGIN_LIB_PATH) \
           --config_dump
