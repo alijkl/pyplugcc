@@ -74,6 +74,8 @@ class TestRun:
     def run(self, verbose=False, test_indexes=[], exit_on_error=False):
         tidx = 0
         ttot = len(self.blocks['blocks'])
+        os.chdir(os.path.dirname(self.config.config_path))
+
         for blk in self.blocks['blocks']:
             tidx += 1
             if test_indexes and tidx not in test_indexes:
