@@ -24,7 +24,7 @@ $(TEST_DIR)gccpy.sh:
           -fplugin-arg-$(PLUGIN_NAME)-script=\$${script} \$$* > $@
 	chmod +x $@
 
-$(TEST_DIR)pyplugcc.conf:
+$(TEST_DIR)pyplugcc.conf: $(PLUGIN_LIB_PATH)
 	$(CONF_MSG) $(PYTHON) $(TEST_DIR)pyplugcc_cli.py -c $@ \
           --gcc $(TARGET_GCC) \
           --plugin_path $(PLUGIN_LIB_PATH) \

@@ -3,7 +3,7 @@
 #include <string>
 #include <gcc-plugin.h>
 #include <vector>
-
+#include <algorithm>
 #include "logging.h"
 #include "pyplugcc-mgcc-tree.h"
 #include "pyplugcc-mgcc-tree-code.h"
