@@ -84,7 +84,21 @@
 		"October", "November", "December"
 	    ],
 	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a04_cb_numerical.py",
+	    "units": ["c/a04_numerical.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": [
+		"bf False", "bt True",
+		"i0 -2147483648", "i1 2147483647", "i2 0",
+		"f0 1.1754943508222875e-38", "f1 3.4028234663852886e+38",
+		"f2 0.0", "f3 nan", "f4 nan", "f5 inf", "f6 -inf",
+		"dpi 3.141592653589793"
+	    ],
+	    "result_stderr_contains": []
 	}
+
 
     ]
 }
