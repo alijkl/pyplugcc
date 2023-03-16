@@ -81,6 +81,18 @@ static PyMethodDef Node_Accessors_Methods[] = {
     .ml_flags = METH_VARARGS,
     .ml_doc   = ""
   },
+  {
+    .ml_name  = "DECL_INITIAL",
+    .ml_meth  = (PyCFunction)Py_DECL_INITIAL,
+    .ml_flags = METH_VARARGS,
+    .ml_doc   = "For a FUNCTION_DECL, holds the tree of BINDINGs"
+  },
+  {
+    .ml_name  = "DECL_ASSEMBLER_NAME",
+    .ml_meth  = (PyCFunction)Py_DECL_ASSEMBLER_NAME,
+    .ml_flags = METH_VARARGS,
+    .ml_doc   = "The name of the object as the assembler will see it (but before any translations made by ASM_OUTPUT_LABELREF)"
+  },
       {
         .ml_name  = "protected_set_expr_location",
         .ml_meth  = (PyCFunction)Py_protected_set_expr_location,
@@ -1790,6 +1802,12 @@ static PyMethodDef Node_Accessors_Methods[] = {
     .ml_meth  = (PyCFunction)Py_IS_NULL_TREE,
     .ml_flags = METH_VARARGS,
     .ml_doc   = "return True if is NULL_TREE"
+  },
+  {
+    .ml_name  = "tree_real_cst_to_float",
+    .ml_meth  = (PyCFunction)Py_tree_real_cst_to_float,
+    .ml_flags = METH_VARARGS,
+    .ml_doc   = "Render a REAL_TYPE constant as a Python float"
   },
   { /* Sentinel */
     .ml_name  = NULL,

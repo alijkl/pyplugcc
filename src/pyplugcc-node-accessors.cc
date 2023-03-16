@@ -156,6 +156,42 @@ PyObject *Py_DECL_SOURCE_COLUMN(PyObject *self, PyObject *args) {
   return result;
 }
 
+
+/*
+For a FUNCTION_DECL, holds the tree of BINDINGs. For a
+TRANSLATION_UNIT_DECL, holds the namespace's BLOCK. For a VAR_DECL, holds the
+initial value. For a PARM_DECL, used for DECL_ARG_TYPE--default values for
+parameters are encoded in the type of the function, not in the PARM_DECL slot.
+For a FIELD_DECL, this is used for enumeration values and the C frontend uses
+it for temporarily storing bitwidth of bitfields. ??? Need to figure out some
+way to check this isn't a PARM_DECL.
+*/
+PyObject *Py_DECL_INITIAL(PyObject *self, PyObject *args) {
+  PyObject *NODE;
+  if (!PyArg_ParseTuple (args, "O:Py_DECL_INITIAL", &NODE)) return NULL;
+  void *t = DECL_INITIAL((tree) Get_gccdata(NODE));
+  PyObject *result = PyGccTree_New();
+  Set_gccdata(result, (void*) t);
+  return result;
+}
+
+
+/*
+The name of the object as the assembler will see it (but before any
+translations made by ASM_OUTPUT_LABELREF). Often this is the same as DECL_NAME.
+It is an IDENTIFIER_NODE. ASSEMBLER_NAME of TYPE_DECLS may store global name of
+type used for One Definition Rule based type merging at LTO. It is computed
+only for LTO compilation and C++.
+*/
+PyObject *Py_DECL_ASSEMBLER_NAME(PyObject *self, PyObject *args) {
+  PyObject *NODE;
+  if (!PyArg_ParseTuple (args, "O:Py_DECL_ASSEMBLER_NAME", &NODE)) return NULL;
+  void *t = DECL_ASSEMBLER_NAME((tree) Get_gccdata(NODE));
+  PyObject *result = PyGccTree_New();
+  Set_gccdata(result, (void*) t);
+  return result;
+}
+
 /*
 extern void protected_set_expr_location (tree, location_t);
 */
@@ -4624,5 +4660,28 @@ PyObject *Py_IS_NULL_TREE(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple (args, "O:Py_IS_NULL_TREE", &NODE)) return NULL;
   long r = (tree) Get_gccdata(NODE) == NULL_TREE;
   PyObject *result = PyBool_FromLong(r);
+  return result;
+}
+
+/*
+Render a REAL_TYPE constant as a Python float
+*/
+PyObject *Py_tree_real_cst_to_float(PyObject *self, PyObject *args) {
+  PyObject *NODE;
+  PyObject *tmp;
+  PyObject *result;
+  size_t digits = 0;
+  int crop_trailing_zeros = 1;
+  char str[256];
+  if (!PyArg_ParseTuple (args, "O:Py_TREE_REAL_CST", &NODE)) return NULL;
+  const real_value *r = TREE_REAL_CST_PTR((tree) Get_gccdata(NODE));
+  if (real_isnan(r)) {
+    tmp = Py_BuildValue("s", "nan", 2);
+  }else{
+    real_to_decimal (str, r, sizeof (str) - 1, digits, crop_trailing_zeros);
+    tmp = Py_BuildValue("s", str, sizeof(str));
+  }
+  result = PyFloat_FromString (tmp);
+  Py_DECREF(tmp);
   return result;
 }
