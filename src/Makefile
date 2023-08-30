@@ -18,10 +18,13 @@ PLUGIN_SOURCE_FILES := \
                        $(SRC_DIR)pyplugcc-mgcc-mnode.cc \
                        $(SRC_DIR)pyplugcc-print-tree.cc \
                        $(SRC_DIR)pyplugcc-mprint-tree.cc \
+                       $(SRC_DIR)pyplugcc-c-common.cc \
+                       $(SRC_DIR)pyplugcc-mc-common.cc \
 
 PLUGIN_GENERATED_SOURCE_FILES := \
                        $(SRC_DIR)pyplugcc-node-accessors.cc \
                        $(SRC_DIR)pyplugcc-print-tree.cc \
+                       $(SRC_DIR)pyplugcc-c-common.cc \
 
 GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
 GCC_MAJOR := $(shell \
@@ -88,6 +91,16 @@ $(SRC_DIR)pyplugcc-pyplugcc-print-tree-mdef.h: \
          --header $(GCCPLUGINS_DIR)/include/print-tree.h \
          > /dev/null
 
+$(SRC_DIR)pyplugcc-c-common.cc \
+$(SRC_DIR)pyplugcc-pyplugcc-c-common.h \
+$(SRC_DIR)pyplugcc-pyplugcc-c-common-mdef.h: \
+   $(SRC_DIR)gen/c-common.cfg $(SRC_DIR)gen/h2pyfun.py \
+   $(wildcard $(SRC_DIR)gen/c-common.d/*.cc)
+	$(GEN_MSG) $(PYTHON) $(SRC_DIR)gen/h2pyfun.py \
+         -c $(SRC_DIR)gen/c-common.cfg \
+         --header $(GCCPLUGINS_DIR)/include/c-family/c-common.h \
+         > /dev/null
+
 clean::
 	$(RM) $(PLUGIN_LIB_PATH)
 	$(RM) $(PLUGIN_SOURCE_FILES:.cc=.o)
@@ -97,3 +110,4 @@ clean::
 distclean: clean
 	$(RM) $(SRC_DIR)pyplugcc-node-accessors*.{cc,h}
 	$(RM) $(SRC_DIR)pyplugcc-print-tree*.{cc,h}
+	$(RM) $(SRC_DIR)pyplugcc-c-common*.{cc,h}

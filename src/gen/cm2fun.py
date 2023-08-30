@@ -72,19 +72,29 @@ def single_line_header_macro(h):
             line = line.replace('\t', ' ')
             for i in reversed(range(1, 6)):
                 line = line.replace(' ' * i, ' ')
-            continue_reading = line.endswith('\\') if lookup == 'define' \
-                else not line.endswith(';')
+            if lookup == 'define':
+                continue_reading = line.endswith('\\')
+            elif lookup == 'static_inline':
+                continue_reading = '{' not in line
+            else:
+                continue_reading = not line.endswith(';')
+
             if defined and continue_reading:
                 if lookup == 'define':
                     mbuf[idx][1] = mbuf[idx][1] + (line[:-1]).strip()
+                elif lookup == 'static_inline':
+                    mbuf[idx][1] = mbuf[idx][1] + line.strip()
                 else:
                     mbuf[idx][1] = mbuf[idx][1] + line.strip() + ' '
             elif defined:
-                mbuf[idx][1] = mbuf[idx][1] + line
+                if lookup not in 'static_inline':
+                    mbuf[idx][1] = mbuf[idx][1] + line
+                else:
+                    mbuf[idx][1] = mbuf[idx][1]
                 idx = idx + 1
                 defined = False
                 continue
-            elif line.startswith('#define ') or line.startswith('extern '):
+            elif line.startswith(('#define ', 'extern ', 'static inline ')):
                 pos = f.tell()
                 if line.startswith('#define '):
                     continue_reading = line.endswith('\\')
@@ -92,6 +102,9 @@ def single_line_header_macro(h):
                 elif line.startswith('extern '):
                     continue_reading = not line.endswith(';')
                     lookup = 'extern'
+                elif line.startswith('static inline '):
+                    continue_reading = '{' not in line
+                    lookup = 'static_inline'
                 if continue_reading:
                     defined = True
                     if lookup == 'define':
@@ -110,6 +123,13 @@ def single_line_header_macro(h):
                                 (str(line_count), line.strip() + ' ', pos, '')
                             )
                         )
+                    elif lookup == 'static_inline':
+                        mbuf.append(
+                            list(
+                                (str(line_count), line.strip() + ' ', pos, '')
+                            )
+                        )
+                        single_line_header_doc(mbuf, h)
                 else:
                     mbuf.append(
                         list(
@@ -131,33 +151,26 @@ def plugin_dir():
 
 class CmReader:
     def __init__(self):
-        self.plugin_dir = plugin_dir()
-        self.cli = argparse.ArgumentParser()
+        self.plugin_dir = plugin_dir()    
         self.header_h = None
-        self.cli.add_argument(
-            "--header", help="gcc header file to parse", default=self.header_h
-        )
-
-    def parse_argument(self):
-        self.args = self.cli.parse_args()
-        if hasattr(self.args, 'header') and self.args.header:
-            self.header_h = self.args.header
-        else:
-            self.header_h = os.path.join(plugin_dir(), 'include', 'tree.h')
-            assert os.path.isfile(self.header_h)
 
     def read_header(self):
         return single_line_header_macro(self.header_h)
 
 
-def read_header(cm=None):
-    cm = cm if cm else CmReader()
-    cm.parse_argument()
-    return cm.read_header()
-
-
 if __name__ == "__main__":
+    cm = CmReader()
+    cli = argparse.ArgumentParser()
+    cli.add_argument(
+        "--header", help="gcc header file to parse", default=cm.header_h
+    )
+    args = cli.parse_args()
+    if hasattr(args, 'header') and args.header:
+        cm.header_h = args.header
+    else:
+        cm.header_h = os.path.join(plugin_dir(), 'include', 'tree.h')
+        assert os.path.isfile(cm.header_h)
 
-    mbuf = read_header()
+    mbuf = cm.read_header()
     for m in mbuf:
         print("{}".format(m))

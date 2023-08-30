@@ -1,4 +1,5 @@
-import cm2fun
+import argparse
+from cm2fun import CmReader, plugin_dir
 import os
 import re
 import textwrap
@@ -27,6 +28,7 @@ def build_py_func(f, p, rc, rp, pad=0, doc=''):
     doc = doc.replace('/* ', '/*\n')
     doc = doc.replace(' */', '\n*/')
     pad = ' ' * pad
+
     if rp == 'tree':
         result = """{3}
 {0}PyObject *Py_{1}(PyObject *self, PyObject *args) {{
@@ -39,6 +41,19 @@ def build_py_func(f, p, rc, rp, pad=0, doc=''):
 {0}}}
 """.format(pad, f, p, '\n' + doc if doc else '')
         return result
+
+    elif rp == 'bool':
+        result = """{3}
+{0}PyObject *Py_{1}(PyObject *self, PyObject *args) {{
+{0}  PyObject *{2};
+{0}  if (!PyArg_ParseTuple (args, "O:Py_{1}", &{2})) return NULL;
+{0}  long r = {1}((tree) Get_gccdata({2}));
+{0}  PyObject *result = PyBool_FromLong(r);
+{0}  return result;
+{0}}}
+""".format(pad, f, p, '\n' + doc if doc else '')
+        return result
+
     elif rc:
         result = """{5}
 {0}PyObject *Py_{1}(PyObject *self, PyObject *args) {{
@@ -77,29 +92,40 @@ def build_meth_def_foot(f=None, pad=0, doc=''):
 
 
 if __name__ == "__main__":
-    cm = cm2fun.CmReader()
-    cm.cli.add_argument(
+    cm = CmReader()
+    cli = argparse.ArgumentParser()
+    cli.add_argument(
+        "--header", help="gcc header file to parse", default=cm.header_h
+    )
+    cli.add_argument(
         "-c", "--config", help="accessor config"
     )
-    cm.cli.add_argument(
+    cli.add_argument(
         "-d", "--out_dir", help="directory to generate in", default='',
     )
-    m = cm2fun.read_header(cm)
+    args = cli.parse_args()
+    if hasattr(args, 'header') and args.header:
+        cm.header_h = args.header
+    else:
+        cm.header_h = os.path.join(plugin_dir(), 'include', 'tree.h')
+        assert os.path.isfile(cm.header_h)
+
+    m = cm.read_header()
     os.chdir(os.path.dirname(__file__))
-    out_dir = os.path.dirname(cm.args.out_dir) if cm.args.out_dir else \
+    out_dir = os.path.dirname(args.out_dir) if args.out_dir else \
         os.path.join(os.path.dirname(__file__), '..')
     processed = set()
     out_c = "{}-{}.cc".format(
         prefix,
-        os.path.basename(cm.args.config[:cm.args.config.rfind('.')])
+        os.path.basename(args.config[:args.config.rfind('.')])
     )
     out_h = "{}-{}.h".format(
         prefix,
-        os.path.basename(cm.args.config[:cm.args.config.rfind('.')])
+        os.path.basename(args.config[:args.config.rfind('.')])
     )
     mde_h = "{}-{}-mdef.h".format(
         prefix,
-        os.path.basename(cm.args.config[:cm.args.config.rfind('.')])
+        os.path.basename(args.config[:args.config.rfind('.')])
     )
     with open(os.path.join(out_dir, out_c), 'w') as out_c_f, \
          open(os.path.join(out_dir, out_h), 'w') as out_h_f, \
@@ -111,7 +137,7 @@ if __name__ == "__main__":
 
 static PyMethodDef {1}_Methods[] = {{
 """.format(out_h, os.path.basename(
-               cm.args.config[:cm.args.config.rfind('.')]
+               args.config[:args.config.rfind('.')]
             ).replace('-', '_').title())
         )
 
@@ -129,12 +155,13 @@ static PyMethodDef {1}_Methods[] = {{
 #include <gcc-plugin.h>
 #include "tree.h"
 #include "print-tree.h"
+#include "c-family/c-common.h"
 #include "pyplugcc-mgcc-tree.h"
 
 """
         )
         # defined macro
-        with open(cm.args.config) as a:
+        with open(args.config) as a:
             for b in m:
                 r = re.match(r'^#define\s+((\w+)\s*\(\s*(\w+)\s*\))', b[1])
                 if r:
@@ -162,7 +189,7 @@ static PyMethodDef {1}_Methods[] = {{
                     processed.add("{} {}".format(f_name, p_name))
 
         # extern function
-        with open(cm.args.config) as a:
+        with open(args.config) as a:
             extern_parse.generate(
                 m,
                 file_cc=out_c_f, file_h=out_h_f, file_met=mde_h_f, file_cfg=a,
@@ -170,7 +197,7 @@ static PyMethodDef {1}_Methods[] = {{
             )
 
         # fixed user functions
-        user_fun_dir = cm.args.config[:cm.args.config.rfind('.')] + '.d'
+        user_fun_dir = args.config[:args.config.rfind('.')] + '.d'
         p = Path(user_fun_dir)
         user_sources = list(p.glob('*.cc'))
         for s in user_sources:

@@ -5,17 +5,24 @@ read the output of cm2fun and try to generate c api code for exern functions
 import textwrap
 import logging
 import os
+import argparse
 
 logger = logging.getLogger(os.path.basename(__file__))
+logging.basicConfig(
+    format='%(asctime)s %(message)s', level=logging.DEBUG
+)
 
 
 def extern_parse(s):
-    assert s[-1] == ';'
+    s = s.strip()
+    assert s[-1] in (';', ')')
     if s.startswith("extern inline __attribute__"):
         return ['', '', '']
     att = s.find('ATTRIBUTE')
     if att > 0:
         tmp = s[0:att][::-1][1:]
+    elif s.startswith('static inline '):
+        tmp = s[::-1]
     else:
         tmp = s[::-1][1:]
     p1 = 0
@@ -32,13 +39,17 @@ def extern_parse(s):
         if p1c == 0:
             break
     end_cnt = 1 if tmp[0] == ')' else 0
-    fname = tmp[p2 + end_cnt:][::-1].split()[-1]
-    fname = fname.split('*')[-1]
+    fname_tmp = tmp[p2 + end_cnt:][::-1].split()[-1]
+    fname = fname_tmp[::-1][0:fname_tmp[::-1].find('*')][::-1] if \
+        '*' in fname_tmp else fname_tmp
+    # move enventual pointer keyword '*' into ftype
     fname_idx = s.find(fname)
-    ftype = s[0:fname_idx].split()[1:]
+    ftype_tmp = s[0:fname_idx].split()
+    ftype = ftype_tmp[1:] if ftype_tmp[0] == 'extern' else ftype_tmp[2:]
     param = tmp[p1 + 1:p2][::-1].split(',') if end_cnt else []
     param = [n.strip() for n in param]
-    logger.debug("ftype: {}, fname: {}, param: {}".format(ftype, fname, param))
+    # logger.debug("ftype: {}, fname: {}, param: {}".format(ftype, fname, param))
+    # logger.info("{} {} {}".format(ftype, fname, param))
     return [ftype, fname, param]
 
 
@@ -98,28 +109,83 @@ class BlockStr:
         return self.str_head() + self.str_note() + self.str_body() + '\n'
 
 
+class FunParam:
+    def __init__(self, s):
+        if s:
+            tmp, self.default = s.split('=') if '=' in s else [s, '']
+            if len(tmp.replace('*', '').split()) == 1:
+                self.type = tmp.split()[0]
+                self.name = 'anonymous'
+                self.is_ptr = tmp.count('*')
+            else:
+                self.type, self.name = tmp.rsplit(maxsplit=1) if \
+                    ' ' in tmp else [tmp, 'anonymous']
+                if self.type == 'enum':
+                    self.type += ' ' + self.name
+                    self.name = ''
+                if self.name in ('CXX_MEM_STAT_INFO', 'HOST_WIDE_INT'):
+                    self.type = self.type + ' ' + self.name
+                    self.name = ''
+                self.is_ptr = tmp.count('*')
+                self.type = self.type.replace('*', '')
+                self.name = self.name.replace('*', '')
+                self.name = self.name if self.name else 'anonymous'
+        else:
+            self.name = 'anonymous'
+            self.type = ''
+            self.default = ''
+            self.is_ptr = False
+
+
+class FunReturnType:
+    def __init__(self, s=None):
+        if s:
+            self.type = s[0] if isinstance(s, list) else s
+            self.is_ptr = ''.join(s).count('*') if isinstance(s, list) \
+                else s.count('*')
+        else:
+            self.type = ''
+            self.is_ptr = False
+
+
+    # def from_str(self, s):
+    #     # self.type = [
+    #     #     n.replace('*', '') for n in s
+    #     #     if n.replace('*', '') not in ''
+    #     # ]
+    #     return self
+
+
 def generate(m=[], file_cc=None, file_h=None, file_met=None, file_cfg=None,
-             include_cc_header=False):
+             include_cc_header=False, only=None):
     processed = set()
     bs = BlockStr()
+    only = only.strip() if only else None
     for e in m:
-        print(e[1])
-        logger.debug(e[1])
-        if not e[1].startswith('extern '):
+        # print(e[1])
+        # logger.debug(e[1])
+        if not e[1].startswith(('extern ', 'static inline ')):
+            continue
+        if only and not e[1].startswith(only + ' '):
             continue
         t, n, p = extern_parse(e[1])
         if file_cfg and not file_cfg.closed:
             file_cfg.seek(0)
             for ln in file_cfg:
                 ln = ln.strip()
-                # print("{} @ {}".format(ln, "{} {} {}".format(t, n, p)))
                 if not ln or ln[0] == '#':
                     continue
                 elif ln == "{} {} {}".format(t, n, p):
                     break
             else:
                 continue
-
+        logger.debug("{} | {} | {}".format(t, n, p))
+        rt = FunReturnType(t)
+        logger.debug(
+            "function: {} {}".format(
+                rt.type, n
+            )
+        )
         if "{}".format(n) in processed:
             continue
         if '...' in p:
@@ -139,63 +205,37 @@ def generate(m=[], file_cc=None, file_h=None, file_met=None, file_cfg=None,
         bs.body += "(PyObject *self, PyObject *args) {\n"
         i = 0
         va = []
-        for pn in p:
-            default_v = pn.split('=')
-            if len(default_v) > 1:
-                default_v = default_v[-1]
-                pn = pn.split('=')[0]
-            else:
-                default_v = ''
-            for k in pn.split()[::-1]:
-                if k == '*' or k == 'const':
-                    continue
-                param_n = k
-                break
-            param_n = param_n.replace('*', '').lower()
-            default_v = "= {}".format(default_v) if default_v else ''
 
+        for pn in p:
+            fp = FunParam(pn)
+            logger.debug("fname: {} pn: {}".format(f_name, pn))
+
+            param_n = fp.name
+            default_v = "= {}".format(fp.default) if fp.default else ''
+            vdecl = ''
             # tree
             if any([x in ('tree', 'const_tree', 'tree_node')
-                    for x in p[i].split()]):
+                    for x in fp.type.split()]):
                 if default_v:
-                    default_v = "= PyGccTree_New({})".format(
-                        default_v.split('=')[-1].strip()
-                    )
+                    default_v = "= PyGccTree_New({})".format(fp.default.strip())
                 vdecl = "PyObject *{}_{} {}".format(param_n, i, default_v)
-            # bool
-            elif pn and pn.split()[0] == 'bool' and default_v:
-                if '*' in p[i].split():
-                    vdecl = "{} *{}_{} {}".format(
-                        pn.split()[0], param_n, i, default_v
-                    )
-                else:
-                    vdecl = "{} {}_{} {}".format(
-                        pn.split()[0], param_n, i, default_v
-                    )
-            # struct
-            elif pn and pn.split()[0] == 'struct' and len(pn.split()) == 3:
-                vdecl = "{}_{} {}".format(
-                    pn, i, default_v
-                )
             # void
-            elif pn and ''.join(pn) == 'void':
-                vdecl = ''
-            # int
-            elif pn and pn.split()[0] == 'int':
-                if '*' in pn.split():
-                    vdecl = "int *{}_{} {}".format(param_n, i, default_v)
-                else:
-                    vdecl = "int {}_{} {}".format(param_n, i, default_v)
-            # no param
-            elif not pn:
-                vdecl = ''
+            elif fp.type in 'void':
+                continue
+            # enum
+            elif fp.type in 'enum':
+                vdecl = "{} {}{}_{} {}".format(
+                    fp.type, '*' * fp.is_ptr, fp.name, i, default_v
+                )
+                
             else:
-                vdecl = "{} {}_{} {}".format(
-                    pn.replace('const ', ''), param_n, i, default_v
+                vdecl = "{} {}{}_{} {}".format(
+                    fp.type, '*' * fp.is_ptr, param_n, i, default_v
                 )
             vdecl = vdecl.replace('  ', ' ')
             if vdecl:
                 bs.body += "  {};\n".format(vdecl.strip())
+
             va += ["{}_{}".format(param_n, i)]
             i += 1
 
@@ -239,19 +279,20 @@ def generate(m=[], file_cc=None, file_h=None, file_met=None, file_cfg=None,
         )
 
         # result
-        if 'void' in t:
+        if 'void' in rt.type:
             if fargs and vdecl:
                 bs.body += "  {}({});".format(n, fargs)
-            elif fargs:
-                bs.body += "  {}();".format(n)
+            # elif not vdecl:
+            #     bs.body += "  {}();".format(n)
             else:
-                bs.body += "  {};".format(n)
+                bs.body += "  {}();".format(n)
+               
         else:
             if fargs and vdecl:
                 bs.body += "  {} {} = {}({});".format(
                     ' '.join(t), 't', n, fargs
                 )
-            elif fargs:
+            elif fargs or not vdecl:
                 bs.body += "  {} {} = {}();".format(
                     ' '.join(t), 't', n
                 )
@@ -337,11 +378,34 @@ def generate(m=[], file_cc=None, file_h=None, file_met=None, file_cfg=None,
 
 
 if __name__ == "__main__":
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument(
+    # )
+    # args = parser.parse_args()
+    from cm2fun import CmReader, plugin_dir
+    cm = CmReader()
+    cli = argparse.ArgumentParser()
+    cli.add_argument(
+        "--header", help="gcc header file to parse", default=cm.header_h
+    )
+    cli.add_argument(
+        '--only', help="generate only 'extern', 'static inline'", default=''
+    )
+    args = cli.parse_args()
+    if hasattr(args, 'header') and args.header:
+        cm.header_h = args.header
+    else:
+        cm.header_h = os.path.join(plugin_dir(), 'include', 'tree.h')
+        assert os.path.isfile(cm.header_h)
 
-    logging.basicConfig(
-        format='%(asctime)s %(message)s', level=logging.DEBUG
+    if args.only:
+        logging.basicConfig(
+            format='# %(message)s', level=logging.INFO
+        )
+    else:
+        logging.basicConfig(
+            format='%(asctime)s %(message)s', level=logging.DEBUG
     )
 
-    import cm2fun
-    mbuf = cm2fun.read_header()
-    generate(mbuf)
+    mbuf = cm.read_header()
+    generate(mbuf, only=args.only)
