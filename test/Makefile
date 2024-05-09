@@ -1,14 +1,19 @@
 TEST_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
-ifeq ($(V),)
-ECHOING := @
-else
+ifneq ($(V),)
 EXIT_ON_ERROR := -e
 VERBOSE := -v
+else ifneq ($(v),)
+EXIT_ON_ERROR := -e
+VERBOSE := -v
+else
+ECHOING := @
 endif
 
 ifneq ($(T),)
 TEST_IDX = -i $(T)
+else ifneq ($(t),)
+TEST_IDX = -i $(t)
 endif
 
 main:: test
