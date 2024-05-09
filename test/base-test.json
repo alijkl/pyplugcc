@@ -58,7 +58,7 @@
 	    "units": ["c/a01_hello.c"],
 	    "options": "-Wall -Werror -o /dev/null -c",
 	    "result_stdout_contains": [
-		"module 'gcc.node' (built-in)",
+		"module 'node' (built-in)",
 		"TREE_CHAIN", "TREE_CODE"
 	    ],
 	    "result_stderr_contains": []
@@ -75,6 +75,8 @@
 	    "units": ["c/a04_enum.c"],
 	    "options": "-Wall -Werror -o /dev/null -c",
 	    "result_stdout_contains": [
+		"color",
+		"red", "green", "blue", "white",
 		"days",
 		"Sunday", "Monday", "Tuesday", "Wednesday",
 		"Thursday", "Friday", "Saturday",
@@ -95,6 +97,17 @@
 		"f0 1.1754943508222875e-38", "f1 3.4028234663852886e+38",
 		"f2 0.0", "f3 nan", "f4 nan", "f5 inf", "f6 -inf",
 		"dpi 3.141592653589793"
+	    ],
+	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a05_ptr.py",
+	    "units": ["c/a05_ptr.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains":
+	    ["TREE_STRING_LENGTH: 140",
+	     "TREE_STRING_POINTER: Every morning, I get up and look through the Forbes list of the richest people in America.",
+	     "array bound: min 0 max 139"
 	    ],
 	    "result_stderr_contains": []
 	}

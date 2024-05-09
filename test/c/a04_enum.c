@@ -10,7 +10,7 @@ enum months
     September, October, November, December,
   };
 
-enum color {red, green, blue, white};
+enum color {red=-2, green, blue, white};
 enum days d;
 int i;
 int *a;

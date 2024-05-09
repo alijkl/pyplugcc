@@ -7,14 +7,12 @@ from gcc.tree_code_base import TYPE_DECL, ENUMERAL_TYPE
 from node import TREE_CODE, TREE_TYPE, IS_NULL_TREE, TYPE_NAME
 from node import IDENTIFIER_POINTER, DECL_CHAIN
 from node import DECL_SOURCE_FILE, DECL_SOURCE_LINE, DECL_SOURCE_COLUMN
-from node import TYPE_VALUES, TREE_VALUE, TREE_PURPOSE, tree_to_shwi, TREE_CHAIN
-# from print_tree import debug_tree, node_as_string, node_brief_as_string
+from node import TYPE_VALUES, TREE_VALUE, TREE_PURPOSE, TREE_CHAIN
+from node import DECL_INITIAL, tree_fits_shwi_p, tree_to_shwi
+from print_tree import debug_tree, node_as_string, node_brief_as_string
 
 
 def enumeral_type_dump(t, n):
-    # debug_tree(t)
-    # print(file=sys.stderr)
-    # print(node_brief_as_string(t, 'brief:'))
     # print(node_as_string(t, 'full:'))
 
     enum_name = IDENTIFIER_POINTER(n)
@@ -32,11 +30,12 @@ def enumeral_type_dump(t, n):
 
     while (not IS_NULL_TREE(v)):
         tval = TREE_VALUE(v)
-        print(
-            "{} = {}".format(
-                IDENTIFIER_POINTER(TREE_PURPOSE(v)), tree_to_shwi(tval)
+        if tree_fits_shwi_p (DECL_INITIAL(tval)):
+            print(
+                "{} = {}".format(
+                    IDENTIFIER_POINTER(TREE_PURPOSE(v)), tree_to_shwi(DECL_INITIAL(tval))
+                )
             )
-        )
         v = TREE_CHAIN(v)
     print()
 
