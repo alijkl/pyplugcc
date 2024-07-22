@@ -67,7 +67,7 @@ def ptr_type_dump(t):
                         id, tc, get_tree_code_name(tc)
                     )
                 )
-                if tc == 16:
+                if tc == gcc.tree_code_base.ARRAY_TYPE:
                     print("{}".format(node_as_string(argt)))
                     print()
                     print("array bound: min {} max {}".format(
@@ -76,7 +76,7 @@ def ptr_type_dump(t):
                 st = TREE_OPERAND(TREE_OPERAND(DECL_INITIAL(t)))
                 stc = TREE_CODE(st)
                 print("{} {} {}".format(id, stc, get_tree_code_name(stc)))
-                if stc == 32:
+                if stc == gcc.tree_code_base.STRING_CST:
                     print("TREE_STRING_LENGTH: {}".format(
                         TREE_STRING_LENGTH(st)
                     ))
