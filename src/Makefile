@@ -8,23 +8,29 @@ PYTHON_VERSION= $(shell $(PYTHON) -c \
   "import sys; print('.'.join(sys.version.partition(' ')[0].rsplit('.')[0:-1]))")
 PYTHON_CONFIG ?= python$(PYTHON_VERSION)-config
 
+PLUGIN_GENERATED_SOURCE_FILES := \
+                       $(SRC_DIR)pyplugcc-node-accessors.cc \
+                       $(SRC_DIR)pyplugcc-print-tree.cc \
+                       $(SRC_DIR)pyplugcc-c-common.cc \
+                       $(SRC_DIR)pyplugcc-c-tree.cc \
+                       $(SRC_DIR)pyplugcc-cp-tree.cc \
+
 PLUGIN_SOURCE_FILES := \
                        $(SRC_DIR)logging.cc \
                        $(SRC_DIR)pyplugcc.cc \
                        $(SRC_DIR)pyplugcc-mgcc.cc \
                        $(SRC_DIR)pyplugcc-mgcc-tree.cc \
                        $(SRC_DIR)pyplugcc-mgcc-tree-code.cc \
-                       $(SRC_DIR)pyplugcc-node-accessors.cc \
                        $(SRC_DIR)pyplugcc-mgcc-mnode.cc \
-                       $(SRC_DIR)pyplugcc-print-tree.cc \
                        $(SRC_DIR)pyplugcc-mprint-tree.cc \
-                       $(SRC_DIR)pyplugcc-c-common.cc \
                        $(SRC_DIR)pyplugcc-mc-common.cc \
+                       $(SRC_DIR)pyplugcc-mc-tree.cc \
+                       $(SRC_DIR)pyplugcc-mcp-tree.cc \
+                       $(SRC_DIR)pyplugcc-cp-weak.cc \
 
-PLUGIN_GENERATED_SOURCE_FILES := \
-                       $(SRC_DIR)pyplugcc-node-accessors.cc \
-                       $(SRC_DIR)pyplugcc-print-tree.cc \
-                       $(SRC_DIR)pyplugcc-c-common.cc \
+PLUGIN_SOURCE_FILES += $(PLUGIN_GENERATED_SOURCE_FILES)
+
+PLUGIN_GENERATED_SOURCE_NAME := $(patsubst pyplugcc-%.cc,%,$(filter %,$(notdir $(PLUGIN_GENERATED_SOURCE_FILES))))
 
 GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
 GCC_MAJOR := $(shell \
@@ -46,7 +52,7 @@ GCC_OPT ?=
 ifeq ($(DEBUG),)
   GCC_OPT+=-O2 $(hardening_flags)
   CONF_MSG = @echo CONFIG: $@ &&
-  GEN_MSG = @echo Generate: $(notdir $**.{cc,h}) &&
+  GEN_MSG = @echo Generate: $(notdir $*{.cc,.h,-mdef.h}) &&
   COMPILE_MSG = @echo Compile: $< &&
   LINK_MSG = @echo Link: $@ &&
 else
@@ -59,6 +65,7 @@ CXXFLAGS+= -I$(GCCPLUGINS_DIR)/include
 
 PYTHON_INCLUDE = $(shell $(PYTHON_CONFIG) --includes)
 
+# LD_FLAGS+= -L$(GCCPLUGINS_DIR) -lcp1plugin
 LD_FLAGS+= $(shell $(PYTHON_CONFIG) --ldflags)
 LD_FLAGS+= -lpython$(PYTHON_VERSION)
 
@@ -101,6 +108,26 @@ $(SRC_DIR)pyplugcc-pyplugcc-c-common-mdef.h: \
          --header $(GCCPLUGINS_DIR)/include/c-family/c-common.h \
          > /dev/null
 
+$(SRC_DIR)pyplugcc-c-tree.cc \
+$(SRC_DIR)pyplugcc-pyplugcc-c-tree.h \
+$(SRC_DIR)pyplugcc-pyplugcc-c-tree-mdef.h: \
+   $(SRC_DIR)gen/c-tree.cfg $(SRC_DIR)gen/h2pyfun.py \
+   $(wildcard $(SRC_DIR)gen/c-tree.d/*.cc)
+	$(GEN_MSG) $(PYTHON) $(SRC_DIR)gen/h2pyfun.py \
+          -c $(SRC_DIR)gen/c-tree.cfg \
+          --header $(GCCPLUGINS_DIR)/include/c-tree.h \
+          > /dev/null
+
+$(SRC_DIR)pyplugcc-cp-tree.cc \
+$(SRC_DIR)pyplugcc-pyplugcc-cp-tree.h \
+$(SRC_DIR)pyplugcc-pyplugcc-cp-tree-mdef.h: \
+   $(SRC_DIR)gen/cp-tree.cfg $(SRC_DIR)gen/h2pyfun.py \
+   $(wildcard $(SRC_DIR)gen/cp-tree.d/*.cc)
+	$(GEN_MSG) $(PYTHON) $(SRC_DIR)gen/h2pyfun.py \
+          -c $(SRC_DIR)gen/cp-tree.cfg \
+          --header $(GCCPLUGINS_DIR)/include/cp/cp-tree.h \
+          > /dev/null
+
 clean::
 	$(RM) $(PLUGIN_LIB_PATH)
 	$(RM) $(PLUGIN_SOURCE_FILES:.cc=.o)
@@ -108,6 +135,6 @@ clean::
 	$(RM) -r $(SRC_DIR)gen/__pycache__/
 
 distclean: clean
-	$(RM) $(SRC_DIR)pyplugcc-node-accessors*.{cc,h}
-	$(RM) $(SRC_DIR)pyplugcc-print-tree*.{cc,h}
-	$(RM) $(SRC_DIR)pyplugcc-c-common*.{cc,h}
+	$(RM) $(PLUGIN_GENERATED_SOURCE_FILES:.cc=.h)
+	$(RM) $(PLUGIN_GENERATED_SOURCE_FILES:.cc=-mdef.h)
+	$(RM) $(PLUGIN_GENERATED_SOURCE_FILES)
