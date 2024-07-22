@@ -7,7 +7,7 @@
 #include <source_location>
 void log(const std::string_view message = "",
          const std::source_location location =
-	 std::source_location::current());
+         std::source_location::current());
 #define LOG_1(msg) { log(msg); }
 #define LOG_0()    { log(); }
 #define LOG_X(x,msg,FUNC, ...)  FUNC
@@ -16,10 +16,10 @@ void log(const std::string_view message = "",
 #else
 
 void log(const std::string p = __FILE__,
-	 const int l = __LINE__,
-	 const std::string  f = __FUNCTION__,
-	 const std::string message = ""
-	 );
+         const int l = __LINE__,
+         const std::string  f = __FUNCTION__,
+         const std::string message = ""
+        );
 
 #define LOG_1(msg) { log( __FILE__, __LINE__, __FUNCTION__, msg); }
 #define LOG_0()    { log( __FILE__, __LINE__, __FUNCTION__); }
