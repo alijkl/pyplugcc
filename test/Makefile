@@ -1,9 +1,9 @@
 TEST_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
-ifneq ($(V),)
+ifeq ($(V),1)
 EXIT_ON_ERROR := -e
 VERBOSE := -v
-else ifneq ($(v),)
+else ifeq ($(v),1)
 EXIT_ON_ERROR := -e
 VERBOSE := -v
 else
