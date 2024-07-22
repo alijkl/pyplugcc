@@ -1,6 +1,6 @@
 
 """
-read the output of cm2fun and try to generate c api code for exern functions
+read the output of cm2fun and try to generate c api code for extern functions
 """
 import textwrap
 import logging
@@ -9,13 +9,13 @@ import argparse
 
 logger = logging.getLogger(os.path.basename(__file__))
 logging.basicConfig(
-    format='%(asctime)s %(message)s', level=logging.DEBUG
+    format='%(asctime)s %(message)s', level=logging.ERROR
 )
 
 
 def extern_parse(s):
     s = s.strip()
-    assert s[-1] in (';', ')')
+    assert s[-1] in (';', ')', '}')
     if s.startswith("extern inline __attribute__"):
         return ['', '', '']
     att = s.find('ATTRIBUTE')
@@ -206,6 +206,7 @@ def generate(m=[], file_cc=None, file_h=None, file_met=None, file_cfg=None,
         i = 0
         va = []
 
+        vdecl = True
         for pn in p:
             fp = FunParam(pn)
             logger.debug("fname: {} pn: {}".format(f_name, pn))
@@ -347,12 +348,12 @@ def generate(m=[], file_cc=None, file_h=None, file_met=None, file_cfg=None,
 """
         # meth_def
         meth_def_str = """{0}  {{
-{0}    .ml_name  = "{1}",
-{0}    .ml_meth  = (PyCFunction){2},
-{0}    .ml_flags = {3},
-{0}    .ml_doc   = "{4}"
+{0}  .ml_name  = "{1}",
+{0}  .ml_meth  = (PyCFunction){2},
+{0}  .ml_flags = {3},
+{0}  .ml_doc   = "{4}"
 {0}  }},
-""".format(' ' * 4,
+""".format(' ' * 1,
            f_name,
            'Py_' + f_name,
            'METH_VARARGS' if fargs else 'METH_NOARGS',
