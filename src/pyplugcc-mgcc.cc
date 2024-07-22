@@ -7,7 +7,6 @@
 #include "logging.h"
 #include "pyplugcc-mgcc-tree.h"
 #include "pyplugcc-mgcc-tree-code.h"
-#include "tree.h"
 #include "diagnostic.h"
 
 static const char* py_repr(PyObject *obj) {
