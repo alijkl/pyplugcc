@@ -9,3 +9,9 @@ pyplugcc-node-accessors.h
 pyplugcc-print-tree-mdef.h
 pyplugcc-print-tree.cc
 pyplugcc-print-tree.h
+pyplugcc-c-tree-mdef.h
+pyplugcc-c-tree.cc
+pyplugcc-c-tree.h
+pyplugcc-cp-tree-mdef.h
+pyplugcc-cp-tree.cc
+pyplugcc-cp-tree.h
