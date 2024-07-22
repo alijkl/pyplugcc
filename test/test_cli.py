@@ -15,6 +15,21 @@ class Expected_Error(Exception):
 class TestCli_Error(Exception):
     pass
 
+class TestColors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+    def wrap (self, s, c=''):
+        if c:
+            return "{}{}{}".format(c,s, self.ENDC)
+        return s
 
 class TestCli (PyPlugGccCli):
     def __init__(self):
@@ -76,6 +91,7 @@ class TestRun:
         ttot = len(self.blocks['blocks'])
         os.chdir(os.path.dirname(self.config.config_path))
 
+        TC = TestColors()
         for blk in self.blocks['blocks']:
             tidx += 1
             if test_indexes and tidx not in test_indexes:
@@ -128,7 +144,7 @@ class TestRun:
                 test_name = "{} ({})".format(
                     script, os.path.basename(" ".join(units))
                 )
-                result_str = 'OK' if result else 'ERROR'
+                result_str = TC.wrap('OK', TC.GREEN) if result else TC.wrap('ERROR', TC.FAIL)
                 pad = (89 - len(test_name) - len(result_str)) * '-'
                 print("| {:>3}/{:<3} {} {} {} |".format(
                     tidx, ttot, test_name, pad, result_str))
