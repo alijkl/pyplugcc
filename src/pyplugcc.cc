@@ -8,6 +8,8 @@
 #include "pyplugcc-mgcc-mnode.h"
 #include "pyplugcc-mprint-tree.h"
 #include "pyplugcc-mc-common.h"
+#include "pyplugcc-mc-tree.h"
+#include "pyplugcc-mcp-tree.h"
 
 #if PY_VERSION_HEX < 0x03090000
 #error this GCC plugin is for Python >=3.9
@@ -134,6 +136,26 @@ plugin_init (struct plugin_name_args *plugin_info,
        buffer,
        "%s adding %s module to the existing table of built-in modules\n",
        err_str.c_str(), "gcc.c_common"
+       );
+    LOG(buffer);
+    return EXIT_FAILURE;
+  }
+  if (PyImport_AppendInittab("c_tree", PyInit_c_tree) == -1) {
+    sprintf
+      (
+       buffer,
+       "%s adding %s module to the existing table of built-in modules\n",
+       err_str.c_str(), "gcc.c_tree"
+       );
+    LOG(buffer);
+    return EXIT_FAILURE;
+  }
+  if (PyImport_AppendInittab("cp_tree", PyInit_cp_tree) == -1) {
+    sprintf
+      (
+       buffer,
+       "%s adding %s module to the existing table of built-in modules\n",
+       err_str.c_str(), "gcc.cp_tree"
        );
     LOG(buffer);
     return EXIT_FAILURE;
