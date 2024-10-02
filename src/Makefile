@@ -53,8 +53,14 @@ ifeq ($(DEBUG),)
   GCC_OPT+=-O2 $(hardening_flags)
   CONF_MSG = @echo CONFIG: $@ &&
   GEN_MSG = @echo Generate: $(notdir $*{.cc,.h,-mdef.h}) &&
-  COMPILE_MSG = @echo Compile: $< &&
   LINK_MSG = @echo Link: $@ &&
+  ifeq ($(V),1)
+   COMPILE_MSG =
+  else ifeq ($(v),1)
+   COMPILE_MSG =
+  else
+   COMPILE_MSG = @echo Compile: $< &&
+ endif
 else
   GCC_OPT+=-O0 -g3
 endif
