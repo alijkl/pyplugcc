@@ -18,9 +18,9 @@ int *a;
 int main(void)
 {
   i = 1;
-  a = (int*)3; 
-  
+  a = (int*)3;
+
   printf("i %i\n", i);
-  printf ("a %ls\n", a);  
+  printf ("a %p\n", a);
   return EXIT_SUCCESS;
 }

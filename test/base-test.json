@@ -110,7 +110,20 @@
 	     "array bound: min 0 max 139"
 	    ],
 	    "result_stderr_contains": []
+	},
+	{
+	    "script": "py/a06_cb_structures.py",
+	    "units": ["c/a06_structures.c"],
+	    "options": "-Wall -Werror -o /dev/null -c",
+	    "result_stdout_contains": [
+		"record_type",
+		"field_name: name",
+		"field_name: next"
+	    ],
+	    "result_stderr_contains": []
 	}
+
+
 
 
     ]
