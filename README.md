@@ -22,11 +22,7 @@ make
 make test
 ```
 
-## External links
-
-* https://gcc.gnu.org/wiki/plugins
-* https://gcc-python-plugin.readthedocs.io/en/latest/index.html
-
+## License
 
 ```
     pyplugcc  Copyright (C) 2023,2024,2025  Ali Bendriss
@@ -34,3 +30,8 @@ make test
     This is free software, and you are welcome to redistribute it
     under certain conditions.
 ```
+
+## External links
+
+* https://gcc.gnu.org/wiki/plugins
+* https://gcc-python-plugin.readthedocs.io/en/latest/index.html
