@@ -134,6 +134,25 @@ $(SRC_DIR)pyplugcc-pyplugcc-cp-tree-mdef.h: \
           --header $(GCCPLUGINS_DIR)/include/cp/cp-tree.h \
           > /dev/null
 
+$(SRC_DIR)gen/c-common.cfg:
+	test -f $@ || python3 $(SRC_DIR)gen/h2pycfg.py --header $(GCCPLUGINS_DIR)/include/c-family/c-common.h > $@
+
+$(SRC_DIR)gen/c-tree.cfg:
+	test -f $@ || python3 $(SRC_DIR)gen/h2pycfg.py --header $(GCCPLUGINS_DIR)/include/c-family/c-tree.h > $@
+
+$(SRC_DIR)gen/cp-tree.cfg:
+	test -f $@ || python3 $(SRC_DIR)gen/h2pycfg.py --header $(GCCPLUGINS_DIR)/include/cp/cp-tree.h > $@
+
+$(SRC_DIR)gen/node-accessors.cfg:
+	test -f $@ || python3 $(SRC_DIR)gen/h2pycfg.py --header $(GCCPLUGINS_DIR)/include/tree.h > $@
+
+$(SRC_DIR)gen/pretty-print.cfg:
+	test -f $@ || python3 $(SRC_DIR)gen/h2pycfg.py --header $(GCCPLUGINS_DIR)/include/pretty-print.h > $@
+
+$(SRC_DIR)gen/print-tree.cfg:
+	test -f $@ || python3 $(SRC_DIR)gen/h2pycfg.py --header $(GCCPLUGINS_DIR)/include/print-tree.h > $@
+
+
 clean::
 	$(RM) $(PLUGIN_LIB_PATH)
 	$(RM) $(PLUGIN_SOURCE_FILES:.cc=.o)
