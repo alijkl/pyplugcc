@@ -52,6 +52,11 @@ plugin_init (struct plugin_name_args *plugin_info,
 
   char  buffer[200];
 
+  PyStatus status;
+
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+
   /*
     https://gcc.gnu.org/onlinedocs/gccint/Plugin-API.html#Plugin-API
 
@@ -96,8 +101,6 @@ plugin_init (struct plugin_name_args *plugin_info,
   register_callback (plugin_name, PLUGIN_INFO, NULL, &py_plug_info);
 
   register_callback (plugin_name, PLUGIN_FINISH, plugin_finish, NULL);
-
-  Py_UnbufferedStdioFlag = 1;
 
   /* Add a built-in module, before Py_Initialize */
   if (PyImport_AppendInittab("gcc", PyInit_gcc) == -1) {
@@ -161,7 +164,13 @@ plugin_init (struct plugin_name_args *plugin_info,
     return EXIT_FAILURE;
   }
 
-  Py_Initialize();
+  config.buffered_stdio = 0;
+  status = Py_InitializeFromConfig(&config);
+  if (PyStatus_Exception(status)) {
+    PyConfig_Clear(&config);
+    Py_ExitStatusException(status);
+  }
+  PyConfig_Clear(&config);
 
   if (! init_gcc_module (plugin_name)) {
     Py_Finalize();
